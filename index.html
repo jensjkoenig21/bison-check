@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BISON Radar v1.24</title>
+<style>
+:root{--bg:#071018;--panel:#0d1923;--panel2:#102330;--line:#203847;--text:#edf6fa;--muted:#8ca3af;--cyan:#50d6ff;--green:#61e294;--orange:#ffb454;--red:#ff6874;--yellow:#f7df67;--shadow:0 14px 40px #0006}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 20% -10%,#12374a 0,transparent 35%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}.wrap{max-width:1280px;margin:auto;padding:18px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:16px}.brand{font-weight:900;letter-spacing:.08em;font-size:22px}.brand b{color:var(--cyan)}.sub{color:var(--muted);font-size:12px}
+nav{display:flex;gap:8px;overflow:auto;padding-bottom:3px}button{border:1px solid var(--line);background:#0c1a24;color:var(--text);padding:10px 13px;border-radius:12px;cursor:pointer}button:hover,.active{border-color:var(--cyan);background:#123044}.primary{background:var(--cyan);color:#03202b;border:0;font-weight:800}
+.grid{display:grid;gap:14px}.market{grid-template-columns:repeat(4,1fr)}.two{grid-template-columns:1.45fr .8fr}.cards{grid-template-columns:repeat(3,1fr)}.card{background:linear-gradient(180deg,#0e1d28,#0b1720);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}.card h2,.card h3{margin:0 0 10px}.metric{font-size:24px;font-weight:850}.muted{color:var(--muted)}.tag{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid #ffffff20}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.cyan{color:var(--cyan)}.yellow{color:var(--yellow)}
+.coin{display:flex;align-items:center;justify-content:space-between;gap:10px}.coin strong{font-size:18px}.score{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;border:5px solid var(--cyan);font-weight:900}.bar{height:7px;background:#1b2d38;border-radius:8px;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:var(--cyan)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-size:12px}.scroll{overflow:auto}
+.section{margin-top:14px}.hidden{display:none}.radar{min-height:250px;position:relative;display:grid;place-items:center;background:radial-gradient(circle,#123546 0 1px,transparent 1px);background-size:20px 20px;border-radius:16px;overflow:hidden}.rings{position:absolute;width:230px;height:230px;border:1px solid #50d6ff55;border-radius:50%;box-shadow:0 0 0 38px #50d6ff10,0 0 0 76px #50d6ff0a}.sweep{position:absolute;width:115px;height:2px;background:linear-gradient(90deg,var(--cyan),transparent);transform-origin:left;animation:s 5s linear infinite}@keyframes s{to{transform:rotate(360deg)}}.dot{position:absolute;width:12px;height:12px;background:var(--orange);border-radius:50%;box-shadow:0 0 16px var(--orange)}.d1{transform:translate(45px,-65px)}.d2{transform:translate(-72px,30px);background:var(--green)}.d3{transform:translate(75px,55px);background:var(--cyan)}
+.form{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.form label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;margin-top:4px;padding:10px;border-radius:10px;border:1px solid var(--line);background:#08141d;color:var(--text)}textarea{min-height:80px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.notice{border-left:3px solid var(--orange);padding-left:10px}.footer{text-align:center;color:var(--muted);font-size:11px;padding:24px}
+@media(max-width:850px){.market,.cards,.two{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}@media(max-width:560px){.market,.cards,.two,.form{grid-template-columns:1fr}.wrap{padding:12px}.metric{font-size:21px}}
+@media(max-width:800px){#liveTopGrid{grid-template-columns:1fr!important}}
+
+/* V1.09 compact Live Monitor */
+#live .card{padding:12px}
+#live .section{margin-top:10px}
+#live h2{font-size:17px;margin:0 0 5px}
+#live h3{font-size:15px;margin:0 0 5px}
+#live .metric{font-size:22px}
+#live .muted{font-size:12px;line-height:1.3}
+#live table th,#live table td{padding:6px 7px;font-size:12px}
+#live .actions{gap:6px;margin-top:7px}
+#live button,#live select,#live input{padding:6px 8px}
+#live .grid.cards{gap:8px}
+#live #forecastNow .card{padding:8px}
+#live #forecastNow .metric{font-size:19px;margin:2px 0}
+#live #liveTopGrid{gap:10px!important}
+#live #lmSelected{margin-top:6px}
+#live #liveMonitorStatus{margin-top:5px}
+
+/* V1.22 responsive iPhone / mobile cockpit */
+.mobile-nav button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;z-index:10000}
+.mobile-nav button span{pointer-events:none}
+.mobile-nav{display:none}
+.mobile-only{display:none}
+@media(max-width:700px){
+ body{padding-bottom:78px}
+ .wrap{padding:10px 10px calc(88px + env(safe-area-inset-bottom));max-width:none}
+ .top{margin-bottom:10px}.brand{font-size:19px}.sub{font-size:10px}
+ #nav{display:none}
+ .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:0;right:0;bottom:0;z-index:9999;background:#071018f5;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(14px)}
+ .mobile-nav button{border:0;background:transparent;border-radius:10px;padding:6px 2px;color:var(--muted);font-size:10px;min-width:0}
+ .mobile-nav button span{display:block;font-size:20px;line-height:22px;margin-bottom:2px}
+ .mobile-nav button.active{color:var(--cyan);background:#123044}
+ .mobile-only{display:block}.desktop-only-mobile-hide{display:none!important}
+ .card{border-radius:14px;padding:12px}.section{margin-top:10px}
+ .coin{align-items:flex-start}.coin .actions{justify-content:flex-end}
+ h2{font-size:17px}.metric{font-size:20px}
+ button{min-height:40px}.actions button{flex:1 1 auto}
+ #live .card{padding:10px}#live #liveTopGrid{display:block!important}#live #liveTopGrid>.card{margin-bottom:10px}
+ #live #lmTable .scroll{display:none}
+ #lmMobileCards{display:grid;gap:7px}
+ .lm-mobile-card{background:#08141d;border:1px solid var(--line);border-radius:13px;padding:10px}
+ .lm-mobile-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+ .lm-mobile-symbol{font-size:18px;font-weight:900}.lm-mobile-price{font-size:18px;font-weight:850;text-align:right}
+ .lm-mobile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+ .lm-mobile-stat{background:#0d1d27;border-radius:9px;padding:6px;text-align:center}.lm-mobile-stat .muted{font-size:9px!important}.lm-mobile-stat b{font-size:12px}
+ #forecastNow{grid-template-columns:1fr!important}#forecastNow canvas{max-height:180px!important}
+ #liveMonitorChart{max-height:230px!important}
+ table th,table td{padding:8px 6px;font-size:11px}
+ #intelCards{grid-template-columns:1fr!important}
+}
+
+
+/* V1.23 iOS navigation hardening */
+@media(max-width:700px){
+ #mobileNav{
+   pointer-events:auto!important;
+   z-index:2147483647!important;
+   isolation:isolate!important;
+   transform:translateZ(0);
+   -webkit-transform:translateZ(0);
+   touch-action:manipulation!important;
+ }
+ #mobileNav button{
+   pointer-events:auto!important;
+   z-index:2!important;
+   cursor:pointer!important;
+   user-select:none!important;
+   -webkit-user-select:none!important;
+ }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#071018">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BISON Radar">
+<meta name="mobile-web-app-capable" content="yes">
+</head>
+<body>
+<div class="wrap">
+<div class="top"><div><div class="brand">BISON <b>RADAR</b></div><div class="sub">Spürnase · Recovery · Pilot-Labor · lokaler Datenspeicher</div></div>
+<nav id="nav"><button class="active" data-page="dash">Dashboard</button><button data-page="portfolio">Portfolio</button><button data-page="detail">Coin-Detail</button><button data-page="live">⚡ Live Monitor</button><button data-page="trades">Käufe & Verkäufe</button><button data-page="sim">🧮 Was wäre wenn?</button><button data-page="watch">Personal Watch</button><button data-page="log">Radar-Log</button><button data-page="intel">🧠 Intelligence</button><button data-page="settings">Daten</button></nav></div>
+<div id="mobileNav" class="mobile-nav"><button type="button" class="active" data-page="dash"><span>🏠</span>Cockpit</button><button type="button" data-page="live"><span>⚡</span>Live</button><button type="button" data-page="log"><span>👃</span>Radar</button><button type="button" data-page="portfolio"><span>💼</span>Portfolio</button><button type="button" data-page="intel"><span>🧠</span>Intel</button></div>
+
+<main id="dash">
+<div class="card" style="margin-bottom:14px"><div class="coin"><div><b>🌐 LIVE-MARKTDATEN</b><div id="liveStatus" class="muted">Noch nicht aktualisiert.</div></div><div class="actions" style="margin:0"><select id="liveDays" style="width:auto;margin:0"><option value="7">7 Tage</option><option value="30" selected>30 Tage</option><option value="90">90 Tage</option></select><button class="primary" onclick="refreshLive()">Jetzt aktualisieren</button></div></div></div>
+<div class="grid market">
+<div class="card"><div class="muted">BTC</div><div id="btcLive" class="metric">— €</div><span id="btcChange" class="tag yellow">Live bereit</span></div>
+<div class="card"><div class="muted">ETH</div><div id="ethLive" class="metric">— €</div><span id="ethChange" class="tag yellow">Live bereit</span></div>
+<div class="card"><div class="muted">ALT-REGIME</div><div class="metric">🟡 Neutral</div><div class="muted">manuell / später automatisch</div></div>
+<div class="card"><div class="muted">RADAR</div><div class="metric"><span id="watchCount">0</span> aktiv</div><div class="muted">gespeicherte Kandidaten</div></div>
+</div>
+
+<div class="grid two section">
+<div class="card"><h2>🔭 Spürnasen-Radar</h2><div id="candidateCards" class="grid cards"></div></div>
+<div class="card"><h2>Radarbild</h2><div class="radar"><div class="rings"></div><div class="sweep"></div><i class="dot d1"></i><i class="dot d2"></i><i class="dot d3"></i><div style="z-index:2;text-align:center"><b>EARLY SIGNALS</b><div class="muted">Catalyst · Motion · Struktur</div></div></div></div>
+</div>
+
+<div class="card section"><h2>🛡️ Recovery-Zonen</h2><div class="scroll"><table><thead><tr><th>Coin</th><th>Typ</th><th>Referenz</th><th>Regel</th></tr></thead><tbody>
+<tr><td>LINK</td><td>Neuinvestment</td><td>10,00–10,50 €</td><td>Unter 10 € Ursache neu bewerten</td></tr>
+<tr><td>XLM</td><td>Recovery</td><td>0,150–0,156 €</td><td>Nur qualifizierter Recovery-Trigger</td></tr>
+<tr><td>CRV</td><td>Recovery</td><td>—</td><td>Nur substanzieller Rücksetzer + Ø-Einstieg klar verbessern</td></tr>
+</tbody></table></div></div>
+</main>
+
+<main id="portfolio" class="hidden">
+<div id="portfolioSummary" class="grid four" style="margin-bottom:14px"></div>
+<div class="card" style="margin-bottom:14px"><div class="coin"><div><b>💼 Portfolio-Bewertung</b><div class="muted">Bewertung mit dem zuletzt geladenen Live-Kurs. Recovery und Pilot bleiben getrennt.</div></div><button class="primary" onclick="refreshLive()">Kurse aktualisieren</button></div></div>
+<div class="card"><div class="coin"><h2>💼 Portfolio</h2><button class="primary" onclick="showPositionForm()">+ Position</button></div><p class="muted">Recovery und Pilot bleiben bewusst getrennt.</p><div class="scroll"><table><thead><tr><th>Coin</th><th>Bereich</th><th>Menge</th><th>Ø Einstieg</th><th>Aktuell</th><th>Investiert</th><th>Wert</th><th>G/V €</th><th>G/V %</th><th></th></tr></thead><tbody id="portfolioRows"></tbody></table></div>
+<div id="posForm" class="hidden section"><div class="form"><label>Coin<input id="pCoin"></label><label>Bereich<select id="pType"><option>Recovery</option><option>Pilot</option><option>Neuinvestment</option></select></label><label>Menge<input id="pQty" type="number" step="any"></label><label>Ø Einstieg €<input id="pAvg" type="number" step="any"></label><label>Investiert €<input id="pInvest" type="number" step="any"></label></div><div class="actions"><button class="primary" onclick="addPosition()">Speichern</button><button onclick="hidePositionForm()">Abbrechen</button></div></div></div>
+</main>
+
+<main id="trades" class="hidden">
+<div class="grid two"><div class="card"><h2>💶 Kauf / Verkauf erfassen</h2><p class="muted">Transaktion plus Entscheidungslogik und damaliges Marktumfeld speichern.</p>
+<div class="form">
+<label>Coin<input id="tCoin" placeholder="z. B. HBAR"></label><label>Aktion<select id="tSide"><option>Kauf</option><option>Verkauf</option></select></label>
+<label>Bereich<select id="tType"><option>Recovery</option><option>Pilot</option><option>Neuinvestment</option></select></label><label>Datum / Uhrzeit<input id="tDate" type="datetime-local"></label>
+<label>Menge<input id="tQty" type="number" step="any"></label><label>Kurs €<input id="tPrice" type="number" step="any"></label>
+<label>Betrag €<input id="tAmount" type="number" step="any" placeholder="sonst automatisch"></label><label>Radar-Stufe<select id="tStage"><option>—</option><option>🔎 CATALYST PRIMING</option><option>🔎 MOTION PRIMING</option><option>👃 EARLY WATCH</option><option>🟠 PILOT CHECK</option><option>🟢 ENTRY CHECK</option><option>⛔ TOO LATE</option></select></label>
+<label style="grid-column:1/-1">Entscheidungsgrund<textarea id="tReason" placeholder="Warum kaufen/verkaufen wir?"></textarea></label>
+<label>Marktregime<input id="tMarket" placeholder="BTC stabil / Altmarkt Risk-on ..."></label><label>Makro / Event<input id="tMacro" placeholder="CPI, Fed, ETF-Flows, Unlock ..."></label>
+<label style="grid-column:1/-1">Risiko / Invalidation<textarea id="tInvalid" placeholder="Was würde unsere These widerlegen?"></textarea></label>
+</div><div class="actions"><button id="tradeSaveBtn" class="primary" onclick="addTrade()">Transaktion speichern</button><button id="tradeCancelBtn" class="hidden" onclick="cancelTradeEdit()">Bearbeiten abbrechen</button></div><div id="tradeEditHint" class="muted section"></div></div>
+<div class="card"><h2>🧠 Entscheidungsarchiv</h2><p class="notice">Später können wir nicht nur Gewinn/Verlust sehen, sondern rekonstruieren, <b>warum</b> wir gehandelt haben und wie der Markt damals aussah.</p><div id="tradeStats"></div></div></div>
+<div class="card section"><h2>📚 Transaktionshistorie</h2><div class="scroll"><table><thead><tr><th>Zeitpunkt</th><th>Coin</th><th>Aktion</th><th>Bereich</th><th>Menge</th><th>Kurs</th><th>Betrag</th><th>Radar</th><th>Begründung / Markt</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div></div>
+</main>
+
+<main id="live" class="hidden">
+<div class="card">
+ <div class="coin">
+  <div><h2>⚡ Live Monitor · rollierende 10 Minuten</h2><div class="muted">Eigene Coin-Auswahl. Dauerbetrieb: Die App läuft fortlaufend weiter. Der Chart zeigt rollierend ausschließlich die jeweils letzten 10 Minuten.</div></div>
+  <div class="actions" style="margin:0"><button class="primary" onclick="liveMonitorRefresh(true)">Jetzt aktualisieren</button><button id="liveToggle" onclick="toggleLiveMonitor()">Auto: AN</button></div>
+ </div>
+ <div id="liveMonitorStatus" class="muted section">Noch keine Aktualisierung.</div>
+</div>
+
+<div class="section" id="liveTopGrid" style="display:grid;grid-template-columns:minmax(220px,.6fr) minmax(0,1.4fr);gap:14px">
+ <div class="card">
+  <h2>Coin-Auswahl</h2>
+  <div class="form">
+   <label>Coin<select id="lmCoin"></select></label>
+   <label>Live-Fenster<input value="Letzte 10 Minuten" disabled></label>
+  </div>
+  <div class="actions"><button onclick="addLiveCoin()">+ hinzufügen</button><button onclick="selectWatchForLive()">Personal Watch übernehmen</button></div>
+  <div id="lmSelected" class="section"></div>
+ </div>
+ <div class="card">
+  <h2>Momentaufnahme</h2>
+  <div id="lmTable"></div><div id="lmMobileCards" class="mobile-only"></div>
+ </div>
+</div>
+
+<div class="card section">
+ <div class="coin"><div><h2>🐽 Spürnase · Early Motion</h2><div class="muted">Automatische Früherkennung aus den rollierenden 10-Minuten-Snapshots. Kein Kaufsignal.</div></div><span id="snifferBadge" class="tag">lernt …</span></div>
+ <div id="snifferAlerts" class="section"><p class="muted">Nach einigen Messpunkten bewertet die App relative Stärke, Bewegung, Beschleunigung und Haltevermögen.</p></div>
+</div>
+
+<div class="card section">
+ <div class="coin"><div><h2>🔮 30-Min Forecast Lab</h2><div class="muted">Experimentelle, eingefrorene Prognosen aus den lokal gesammelten Live-Daten. Jede Prognose wird nach 30 Minuten automatisch gegen den tatsächlichen Kurs bewertet. Kein Kaufsignal.</div></div><span id="forecastBadge" class="tag">Datensammlung</span></div>
+ <div id="forecastNow" class="grid cards section"></div>
+ <div class="actions"><button onclick="makeForecasts(true)">Prognose jetzt einfrieren</button><button onclick="renderForecastLab()">Auswertung aktualisieren</button></div>
+ <div id="forecastTrack" class="section"></div>
+</div>
+
+<div class="card section">
+ <div class="coin"><div><h2>📈 Relative Entwicklung</h2><div class="muted">Alle ausgewählten Coins starten bei 100. So sieht man sofort, welcher Coin seit Beginn der Beobachtung relativ stärker oder schwächer läuft.</div></div><span class="tag">30-Sek.-Abruf · 10-Min.-Fenster</span></div>
+ <div style="height:255px;margin-top:8px"><canvas id="liveMonitorChart"></canvas></div>
+ <div id="lmChartHint" class="muted section"></div>
+</div>
+</main>
+
+<main id="sim" class="hidden">
+<div class="card"><h2>🧮 Was wäre wenn? · BISON Spread-Simulator</h2>
+<p class="muted">Simuliert Kauf, Verkauf, Break-even und Zielgewinn mit einstellbarem Spread. Referenzkurse sind nicht die verbindlichen BISON-Geld-/Briefkurse.</p>
+<div class="form">
+<label>Coin<select id="simCoin" onchange="simCoinChanged()"></select></label>
+<label>Berechnung<select id="simMode" onchange="simModeChanged()"><option value="new">Neukauf zum Referenzkurs</option><option value="existing">Bestehende Position (echter BISON-Einstieg)</option></select></label>
+<label>Referenzkurs € <input id="simPrice" type="number" min="0" step="any" oninput="simCalc()"></label>
+<label>Investition € <input id="simAmount" type="number" min="0" step="any" value="50" oninput="simCalc()"></label>
+<label>Kaufaufschlag % <input id="simBuy" type="number" min="0" max="30" step="0.05" oninput="simCalc()"></label>
+<label>Verkaufsabschlag % <input id="simSell" type="number" min="0" max="30" step="0.05" oninput="simCalc()"></label>
+<label>Gewünschter Nettogewinn € <input id="simTarget" type="number" min="0" step="any" value="5" oninput="simCalc()"></label>
+<label>Angenommener Referenzkurs beim Verkauf € <input id="simExit" type="number" min="0" step="any" oninput="simCalc()"></label>
+</div>
+<div class="actions"><button onclick="simUseLive()">Aktuellen Referenzkurs übernehmen</button><button onclick="simMode.value='existing';simModeChanged()">Portfolio-Position berechnen</button></div>
+<div id="simInfo" class="muted section"></div></div>
+<div id="simResults" class="grid market section"></div>
+<div class="card section">
+ <div class="coin"><div><h2>📈 Heute · BTC vs. ausgewählter Coin</h2><div class="muted">Tagesverlauf relativ zum ersten verfügbaren heutigen Messpunkt = 100. Bitcoin bleibt immer als feste Referenz eingeblendet.</div></div><span id="simDayBadge" class="tag">Tagesstart = 100</span></div>
+ <div style="height:300px;margin-top:12px"><canvas id="simDayChart"></canvas></div>
+ <div id="simDayHint" class="muted section">Der Chart wird beim Wechsel des Coins automatisch aktualisiert.</div>
+</div>
+<div class="card section"><h2>📊 Szenarien – was bleibt nach dem Verkauf?</h2><div id="simScenarios" class="scroll"></div><div class="muted section">Die Berechnung ist eine Näherung: Kauf = Referenz × (1 + Kaufaufschlag); Verkauf = Referenz × (1 − Verkaufsabschlag). Tatsächliche BISON-Quotes können abweichen. Steuern, Slippage und Zahlungsgebühren sind nicht enthalten.</div></div>
+</main>
+
+<main id="detail" class="hidden">
+<div class="card">
+ <div class="coin">
+  <div><h2>🔬 Coin-Detail</h2><div class="muted">Kurs, Position, Radar und Entscheidungen auf einer gemeinsamen Zeitachse.</div></div>
+  <div class="actions" style="margin:0"><select id="detailCoin" onchange="renderCoinDetail();refreshTimePattern()" style="min-width:120px"></select><button class="primary" onclick="refreshDetailData()">Kursdaten laden</button></div>
+ </div>
+</div>
+
+<div id="detailMetrics" class="grid four section"></div>
+
+<div class="card section">
+ <div class="coin"><div><h2 id="detailChartTitle">Historischer Kurs</h2><div class="muted">EUR-Tageskurs. Ereignisse werden als Punkte auf dem Kursverlauf markiert.</div></div>
+ <select id="detailDays" onchange="refreshDetailData()" style="width:auto"><option value="7">7 Tage</option><option value="30">30 Tage</option><option value="90" selected>90 Tage</option><option value="365">1 Jahr</option></select></div>
+ <div style="height:360px;margin-top:12px"><canvas id="detailChart"></canvas></div>
+ <div id="detailChartHint" class="muted section"></div>
+</div>
+
+<div class="card section">
+ <div class="coin">
+  <div><h2>🕒 Tageszeit-Muster · −3h bis +2h</h2><div class="muted">Vergangene Intraday-Verläufe werden auf den aktuellen Zeitpunkt = 100 normiert. Rechts von JETZT siehst du, was an früheren Tagen in den folgenden zwei Stunden passiert ist – keine Prognose.</div></div>
+  <div class="actions" style="margin:0"><select id="patternMode" onchange="refreshTimePattern()" style="width:auto"><option value="7">Letzte 7 Tage</option><option value="14" selected>Letzte 14 Tage</option><option value="weekday">Gleicher Wochentag</option></select><button onclick="refreshTimePattern()">Muster laden</button></div>
+ </div>
+ <div id="patternStats" class="grid four section"></div>
+ <div style="height:300px;margin-top:8px"><canvas id="timePatternChart"></canvas></div>
+ <div id="timePatternHint" class="muted section">Die Ansicht nutzt das lokale Stunden-Archiv und vorhandene Forecast-Messpunkte – ohne zusätzlichen Historien-Abruf.</div>
+</div>
+
+<div class="grid two section">
+ <div class="card"><h2>🧭 Radar-Status</h2><div id="detailRadar"></div></div>
+ <div class="card"><h2>💼 Deine Position</h2><div id="detailPosition"></div></div>
+</div>
+
+<div class="card section">
+ <h2>🕓 Coin-Historie</h2>
+ <p class="muted">Radar-Einträge und deine Käufe/Verkäufe werden gemeinsam chronologisch dargestellt.</p>
+ <div id="detailTimeline"></div>
+</div>
+</main>
+
+<main id="watch" class="hidden">
+<div class="grid two">
+<div class="card">
+<div class="coin"><div><h2>👀 Personal Watch</h2><div class="muted">Deine eigene Beobachtungsliste – unabhängig vom Radar.</div></div><button class="primary" onclick="showWatchForm()">+ Coin beobachten</button></div>
+<div id="watchForm" class="hidden section">
+<div class="form">
+<label>Coin<select id="wCoin"></select></label>
+<label>Eigene Priorität<select id="wPriority"><option>⭐ Normal</option><option>🔥 Hoch</option><option>🧊 Locker beobachten</option></select></label>
+<label>Beobachten seit<input id="wDate" type="date"></label>
+<label>Persönlicher Referenzkurs €<input id="wRef" type="number" step="any" placeholder="optional"></label>
+<label style="grid-column:1/-1">Warum interessiert mich der Coin?<textarea id="wNote" placeholder="z. B. auffällige Bewegung, Sektor spannend, Gefühl/Idee, später prüfen ..."></textarea></label>
+</div><div class="actions"><button class="primary" onclick="addWatch()">Auf Watchlist</button><button onclick="hideWatchForm()">Abbrechen</button></div>
+</div>
+<div id="watchCards" class="section"></div>
+</div>
+
+<div class="card">
+<h2>⚖️ Vergleichslabor</h2>
+<p class="muted">Bis zu vier Watch-Coins auswählen. In V0.3 vergleichen wir zunächst deine gespeicherten Referenzkurse und Radar-Scores. Die echte Kursüberlagerung kommt mit der Marktdaten-Anbindung.</p>
+<div id="compareChecks"></div>
+<div class="actions"><button onclick="renderCompare()">Auswahl vergleichen</button></div>
+<div id="compareArea" class="section"></div>
+<div class="section"><canvas id="compareChart" height="180"></canvas><div id="chartHint" class="muted"></div></div>
+</div>
+</div>
+
+<div class="card section">
+<h2>📈 Kursdaten & Vergleich</h2>
+<p>V0.4 kann historische Tageskurse aus einer CSV importieren und ausgewählte Coins auf <b>100 am gemeinsamen Starttag</b> normalisieren. Damit vergleichen wir relative Performance statt absolute Coinpreise.</p>
+<div class="actions"><button onclick="downloadPriceTemplate()">CSV-Vorlage</button><button onclick="document.getElementById('priceFile').click()">Kurs-CSV importieren</button><input class="hidden" id="priceFile" type="file" accept=".csv,text/csv" onchange="importPrices(this)"></div>
+<div id="priceInfo" class="muted section"></div>
+</div>
+</main>
+<main id="log" class="hidden">
+<div class="grid two"><div class="card"><h2>📝 Neuer Radar-Eintrag</h2><div class="form">
+<label>Coin<input id="rCoin" placeholder="z. B. FIL"></label><label>Stufe<select id="rStage"><option>🔎 CATALYST PRIMING</option><option>🔎 MOTION PRIMING</option><option>👃 EARLY WATCH</option><option>🟠 PILOT CHECK</option><option>🟢 ENTRY CHECK</option><option>⛔ TOO LATE</option></select></label>
+<label>Kurs €<input id="rPrice" type="number" step="any"></label><label>Score 0–100<input id="rScore" type="number" min="0" max="100" value="50"></label>
+<label style="grid-column:1/-1">Neue Vorboten<textarea id="rReason" placeholder="Catalyst, Volumen, relative Stärke, höheres Tief ..."></textarea></label></div>
+<div class="actions"><button class="primary" onclick="addRadar()">Radar-Eintrag speichern</button></div></div>
+<div class="card"><h2>Warum das wichtig ist</h2><p class="notice">Jeder Lauf bekommt einen Zeitstempel. Damit können wir später messen, ob wir einen Coin bei +3 % oder erst nach +20 % entdeckt haben.</p><p class="muted">V0.1 speichert alles ausschließlich auf diesem Gerät im Browser. Keine Börsenanbindung, kein Trading und keine automatische Kaufentscheidung.</p></div></div>
+<div class="card section"><h2>Historie</h2><div id="history"></div></div>
+</main>
+
+<main id="intel" class="hidden">
+<div class="card"><div class="coin"><div><h2 style="margin:0">🧠 Radar Intelligence</h2><div class="muted">Langzeitgedächtnis aus Frühtrend-Radar, Market Check, Events, Risiken und Lernfällen.</div></div><div class="actions" style="margin:0"><button class="primary" onclick="document.getElementById('intelImportFile').click()">Intelligence Pack importieren</button><input class="hidden" id="intelImportFile" type="file" accept=".json" onchange="importIntelPack(this)"><button onclick="exportIntelPack()">Intelligence exportieren</button><button onclick="downloadIntelTemplate()">JSON-Vorlage</button></div></div><div id="intelImportStatus" class="notice section">Neue Packs werden anhand ihrer ID aktualisiert oder ergänzt. Bestehende Historie bleibt erhalten.</div></div>
+<div class="grid market section" id="intelStats"></div>
+<div class="card section"><div class="coin"><h2 style="margin:0">Aktives Wissen</h2><select id="intelCoinFilter" style="width:auto" onchange="renderIntelligence()"><option value="">Alle Coins</option></select></div><div id="intelCards" class="grid two section"></div></div>
+<div class="card section"><h2>Was wir künftig speichern</h2><p class="muted">Catalysts/Events, Radar-Signale, Risiken, These, erster Beobachtungskurs und Lern-Outcome. Damit können wir später rückblickend messen: Was wussten wir vor einem Move – und welche Vorboten waren tatsächlich wertvoll?</p></div>
+</main>
+<main id="settings" class="hidden">
+<div class="card"><h2>💾 Daten</h2><p>Die erste Version arbeitet offline mit <b>localStorage</b>. So können wir die Oberfläche und Datenstruktur testen, bevor wir APIs anbinden.</p><div class="actions"><button onclick="exportData()">JSON exportieren</button><button onclick="document.getElementById('importFile').click()">JSON importieren</button><input class="hidden" id="importFile" type="file" accept=".json" onchange="importData(this)"><button onclick="resetData()">Testdaten zurücksetzen</button></div></div>
+</main>
+<div class="footer">BISON Radar v1.24 · Analyse-Cockpit, keine Anlageberatung und keine automatische Orderausführung</div>
+</div>
+<script>
+const KEY="bisonRadar_v10";
+const defaults={
+ positions:[
+ {coin:"HBAR",type:"Pilot",qty:575.82437456,avg:.08683,invest:50},
+ {coin:"ONDO",type:"Pilot",qty:108.53902,avg:.46066,invest:50},
+ {coin:"POL",type:"Recovery",qty:562.20364609,avg:.10359,invest:58.24},
+ {coin:"SHIB",type:"Recovery",qty:4000000,avg:.0000114925,invest:45.97},
+ {coin:"PEPE",type:"Recovery",qty:10000000,avg:.000009476,invest:94.76},
+ {coin:"ADA",type:"Recovery",qty:1300,avg:.75233,invest:977.99}
+ ],
+ trades:[
+ {coin:"HBAR",side:"Kauf",type:"Pilot",qty:575.82437456,price:.08683,amount:50,stage:"🟠 PILOT CHECK",reason:"Früher Pilot nach Radar-Signal",market:"Pilotbereich getrennt von Recovery",macro:"",invalid:"",date:"2026-09-28T12:00:00+02:00"},
+ {coin:"ONDO",side:"Kauf",type:"Pilot",qty:108.53902,price:.46066,amount:50,stage:"🟠 PILOT CHECK",reason:"Kleine Pilotposition",market:"Frühtrend-Beobachtung",macro:"",invalid:"",date:"2026-09-24T12:00:00+02:00"}
+ ],
+ watch:[],
+ intelligence:[],
+ prices:{},
+ radar:[
+ {coin:"FIL",stage:"👃 EARLY WATCH",price:.98,score:72,reason:"Volumen-Regimewechsel · Gewinnhaltevermögen · relative Stärke · Supply-Catalyst",date:"2026-10-07T07:31:00+02:00"},
+ {coin:"SOL",stage:"👃 EARLY WATCH",price:107,score:66,reason:"Institutioneller Catalyst · Kurs noch nicht weggelaufen · Bestätigung ausstehend",date:"2026-10-07T06:45:00+02:00"},
+ {coin:"ETH",stage:"👃 EARLY WATCH",price:2330,score:63,reason:"Technischer Catalyst · Preisreaktion moderat · Marktbestätigung ausstehend",date:"2026-10-07T07:05:00+02:00"}
+ ]};
+let db=JSON.parse(localStorage.getItem(KEY)||"null")||structuredClone(defaults);
+
+function ensureIntelligence(){if(!Array.isArray(db.intelligence))db.intelligence=[]}
+function intelId(x){return x.id||[String(x.coin||"").toUpperCase(),x.kind||"note",x.eventDate||x.observedAt||x.title||x.summary||""].join("|")}
+function normalizeIntel(x){const now=new Date().toISOString();return {id:intelId(x),coin:String(x.coin||"MARKET").toUpperCase(),kind:x.kind||"signal",title:x.title||x.summary||"Radar-Erkenntnis",stage:x.stage||"",status:x.status||"active",observedAt:x.observedAt||now,eventDate:x.eventDate||"",expiresAt:x.expiresAt||"",firstSeenPrice:Number.isFinite(+x.firstSeenPrice)?+x.firstSeenPrice:null,score:Number.isFinite(+x.score)?+x.score:null,signals:Array.isArray(x.signals)?x.signals:[],risks:Array.isArray(x.risks)?x.risks:[],thesis:x.thesis||"",source:x.source||"Market Check",outcome:x.outcome||"",updatedAt:now}}
+function mergeIntel(items){ensureIntelligence();let added=0,updated=0;for(const raw of items||[]){const x=normalizeIntel(raw),i=db.intelligence.findIndex(y=>y.id===x.id);if(i>=0){db.intelligence[i]={...db.intelligence[i],...x,observedAt:db.intelligence[i].observedAt||x.observedAt};updated++}else{db.intelligence.push(x);added++}}db.intelligence.sort((a,b)=>new Date(a.observedAt)-new Date(b.observedAt));return {added,updated}}
+async function importIntelPack(inp){const st=document.getElementById("intelImportStatus");try{const j=JSON.parse(await inp.files[0].text()),items=Array.isArray(j)?j:(j.intelligence||j.items||[]);if(!Array.isArray(items)||!items.length)throw new Error("Keine Intelligence-Einträge gefunden.");const r=mergeIntel(items);save();if(st)st.innerHTML=`✅ Pack übernommen: <b>${r.added}</b> neu · <b>${r.updated}</b> aktualisiert · insgesamt <b>${db.intelligence.length}</b> Erkenntnisse.`}catch(e){if(st)st.textContent="❌ Import nicht möglich: "+e.message}finally{inp.value=""}}
+function exportIntelPack(){ensureIntelligence();const blob=new Blob([JSON.stringify({format:"bison-intelligence-v1",exportedAt:new Date().toISOString(),intelligence:db.intelligence},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="bison-intelligence-"+new Date().toISOString().slice(0,10)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function downloadIntelTemplate(){const sample={format:"bison-intelligence-v1",intelligence:[{id:"COIN-event-YYYY-MM-DD",coin:"COIN",kind:"event",title:"Bevorstehender Catalyst",stage:"🔎 CATALYST PRIMING",status:"active",observedAt:new Date().toISOString(),eventDate:"",firstSeenPrice:null,score:55,signals:["Signal 1","Signal 2"],risks:["Risiko"],thesis:"Warum könnte das relevant werden?",source:"Frühtrend-Radar / Market Check",outcome:""}]};const blob=new Blob([JSON.stringify(sample,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="bison-intelligence-vorlage.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function intelForCoin(c){ensureIntelligence();const now=Date.now();return db.intelligence.filter(x=>x.coin===c&&x.status!=="closed"&&x.status!=="historical"&&(!x.expiresAt||new Date(x.expiresAt).getTime()>now)).sort((a,b)=>{const ea=a.eventDate?Math.abs(new Date(a.eventDate).getTime()-now):9e15,eb=b.eventDate?Math.abs(new Date(b.eventDate).getTime()-now):9e15;return ea-eb||new Date(b.observedAt)-new Date(a.observedAt)})}
+function daysToEvent(x){if(!x.eventDate)return null;return Math.ceil((new Date(x.eventDate).getTime()-Date.now())/86400000)}
+function liveIntelHtml(c){const xs=intelForCoin(c).slice(0,3);if(!xs.length)return "";return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid #203847"><div class="muted"><b>🧠 Radar Intelligence</b></div>${xs.map(x=>{const d=daysToEvent(x),when=d==null?"":d===0?" · heute":d>0?` · in ${d} T.`:` · ${Math.abs(d)} T. her`;return `<div class="muted" style="margin-top:3px">${x.stage?esc(x.stage)+" · ":""}${esc(x.title)}${when}${x.risks?.length?" · ⚠️":""}</div>`}).join("")}</div>`}
+function renderIntelligence(){ensureIntelligence();const stats=document.getElementById("intelStats"),cards=document.getElementById("intelCards"),sel=document.getElementById("intelCoinFilter");if(!stats||!cards||!sel)return;const active=db.intelligence.filter(x=>x.status!=="closed"&&x.status!=="historical"),historical=db.intelligence.filter(x=>x.status==="historical"),coins=[...new Set(active.map(x=>x.coin))].sort(),events=active.filter(x=>x.eventDate&&new Date(x.eventDate)>=new Date()),risks=active.filter(x=>x.risks?.length),learning=db.intelligence.filter(x=>x.kind==="learning"||x.outcome);const current=sel.value;sel.innerHTML='<option value="">Alle Coins</option>'+coins.map(c=>`<option>${esc(c)}</option>`).join("");sel.value=coins.includes(current)?current:"";const box=(t,v,sub)=>`<div class="card" style="box-shadow:none"><div class="muted">${t}</div><div class="metric">${v}</div><div class="muted">${sub}</div></div>`;stats.innerHTML=box("Aktive Erkenntnisse",active.length,"Radar-Gedächtnis")+box("Bevorstehende Events",events.length,"mit Datum")+box("Risiken",risks.length,"mit Risikoflag")+box("Archivwissen",historical.length,"historische Lernfälle");const list=db.intelligence.filter(x=>x.status!=="closed").filter(x=>!sel.value||x.coin===sel.value).slice().reverse();cards.innerHTML=list.length?list.map(x=>{const d=daysToEvent(x),ev=d==null?"":(d===0?" · 📅 heute":d>0?` · 📅 in ${d} T.`:` · 📅 vor ${Math.abs(d)} T.`);return `<div class="card" style="box-shadow:none"><div class="coin"><div><b>${esc(x.coin)}</b> <span class="tag cyan">${esc(x.kind)}</span>${x.status==="historical"?' <span class="tag">📚 HISTORISCH</span>':""}</div>${x.score!=null?`<span class="score">${x.score}</span>`:""}</div><div style="margin-top:8px"><b>${esc(x.title)}</b>${ev}</div>${x.stage?`<div class="section"><span class="tag yellow">${esc(x.stage)}</span></div>`:""}${x.thesis?`<p>${esc(x.thesis)}</p>`:""}${x.signals?.length?`<div class="muted">📡 ${x.signals.map(esc).join(" · ")}</div>`:""}${x.risks?.length?`<div class="muted red" style="margin-top:5px">⚠️ ${x.risks.map(esc).join(" · ")}</div>`:""}<div class="muted" style="margin-top:7px">${new Date(x.observedAt).toLocaleDateString("de-DE")} · ${esc(x.source)}</div></div>`}).join(""):'<div class="notice">Noch kein Intelligence Pack importiert. Die Struktur ist bereit.</div>'}
+
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function render(){
+ document.getElementById("watchCount").textContent=db.radar.length;
+ document.getElementById("candidateCards").innerHTML=db.radar.slice().reverse().slice(0,3).map(x=>`<div class="card" style="box-shadow:none"><div class="coin"><strong>${esc(x.coin)}</strong><div class="score">${x.score}</div></div><span class="tag cyan">${esc(x.stage)}</span><div style="margin-top:10px"><b>${Number(x.price).toLocaleString("de-DE")} €</b></div><div class="bar"><i style="width:${Math.min(100,x.score)}%"></i></div><div class="muted">${esc(x.reason)}</div></div>`).join("");
+ document.getElementById("portfolioRows").innerHTML=db.positions.map((p,i)=>{
+ const l=db.live&&db.live[p.coin],cur=l&&l.price,val=cur!=null?p.qty*cur:null,pl=val!=null?val-p.invest:null,pct=pl!=null&&p.invest?pl/p.invest*100:null;
+ return `<tr><td><button onclick="openCoinDetail(\'${esc(p.coin)}\')" style="padding:4px 8px"><b>${esc(p.coin)}</b></button></td><td>${esc(p.type)}</td><td>${Number(p.qty).toLocaleString("de-DE",{maximumFractionDigits:8})}</td><td>${fmtEur(p.avg)}</td><td>${cur!=null?fmtEur(cur):"—"}</td><td>${fmtEur(p.invest)}</td><td>${val!=null?fmtEur(val):"—"}</td><td class="${pl==null?"":pl>=0?"green":"red"}">${pl==null?"—":(pl>=0?"+":"")+fmtEur(pl)}</td><td class="${pct==null?"":pct>=0?"green":"red"}">${pct==null?"—":fmtPct(pct)}</td><td><button onclick="delPos(${i})">×</button></td></tr>`}).join("");
+ renderPortfolioSummary();
+ renderIntelligence();
+ if(!db.trades) db.trades=[];
+ document.getElementById("tradeRows").innerHTML=db.trades.slice().reverse().map((t,ri)=>{const i=db.trades.length-1-ri;const detail=[t.reason,t.market,t.macro].filter(Boolean).join(" · ");return `<tr><td>${new Date(t.date).toLocaleString("de-DE")}</td><td><b>${esc(t.coin)}</b></td><td class="${t.side==="Kauf"?"green":"orange"}"><b>${esc(t.side)}</b></td><td>${esc(t.type)}</td><td>${Number(t.qty).toLocaleString("de-DE",{maximumFractionDigits:8})}</td><td>${fmtPrice(t.price)}</td><td>${Number(t.amount).toLocaleString("de-DE",{minimumFractionDigits:2})} €</td><td>${esc(t.stage)}</td><td>${esc(detail.slice(0,100))}${detail.length>100?"…":""}</td><td style="white-space:nowrap"><button onclick="editTrade(${i})" title="Bearbeiten">✏️</button> <button onclick="delTrade(${i})" title="Löschen">🗑️</button></td></tr>`}).join("");
+ const buys=db.trades.filter(x=>x.side==="Kauf").length,sells=db.trades.filter(x=>x.side==="Verkauf").length;
+ document.getElementById("tradeStats").innerHTML=`<div style="display:flex;gap:30px;margin-top:18px"><div><div class="metric green">${buys}</div><div class="muted">Käufe</div></div><div><div class="metric orange">${sells}</div><div class="muted">Verkäufe</div></div></div>`;
+ if(!db.watch) db.watch=[];
+ if(!db.prices) db.prices={};
+ const pi=document.getElementById("priceInfo");if(pi){const coins=Object.keys(db.prices),pts=coins.reduce((n,c)=>n+db.prices[c].length,0);pi.innerHTML=coins.length?`Gespeichert: <b>${coins.length} Coins</b> · ${pts.toLocaleString("de-DE")} Tageswerte · lokal im Browser`:"Noch keine historischen Kursdaten importiert.";}
+ const watchCards=document.getElementById("watchCards");
+ if(watchCards){
+  watchCards.innerHTML=db.watch.length?db.watch.map((w,i)=>{
+   const radar=db.radar.slice().reverse().find(r=>r.coin===w.coin);
+   const pos=db.positions.find(p=>p.coin===w.coin);
+   return `<div class="card" style="box-shadow:none;margin-bottom:10px"><div class="coin"><div><strong>${esc(w.coin)}</strong> <span class="tag">${esc(w.priority)}</span></div><button onclick="delWatch(${i})">×</button></div>
+   <div class="muted">seit ${new Date(w.date+"T12:00:00").toLocaleDateString("de-DE")}${w.ref?` · Referenz ${Number(w.ref).toLocaleString("de-DE",{maximumFractionDigits:10})} €`:""}</div>
+   <div style="margin-top:8px">${esc(w.note||"Eigene Beobachtung")}</div>
+   <div style="margin-top:8px">${radar?`Radar: <b>${esc(radar.stage)}</b> · Score ${radar.score}/100`:`<span class="muted">Kein aktueller Radar-Eintrag – trotzdem auf deiner Watchlist.</span>`}</div>
+   ${pos?`<div class="muted">Portfolio: ${esc(pos.type)} · ${Number(pos.qty).toLocaleString("de-DE",{maximumFractionDigits:8})} ${esc(w.coin)}</div>`:""}</div>`}).join(""):`<p class="muted">Noch keine Coins auf deiner persönlichen Watchlist.</p>`;
+  const cc=document.getElementById("compareChecks");
+  cc.innerHTML=db.watch.map((w,i)=>`<label style="display:block;margin:8px 0"><input class="cmp" type="checkbox" value="${i}" style="width:auto;margin-right:8px">${esc(w.coin)}</label>`).join("");
+ }
+ document.getElementById("history").innerHTML=db.radar.slice().reverse().map(x=>`<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="coin"><div><b>${esc(x.coin)}</b> · ${esc(x.stage)}</div><b>${Number(x.price).toLocaleString("de-DE")} €</b></div><div class="muted">${new Date(x.date).toLocaleString("de-DE")} · Score ${x.score}/100</div><div>${esc(x.reason)}</div></div>`).join("");
+}
+function showPage(page){const target=document.getElementById(page);if(!target)return;document.querySelectorAll("main").forEach(x=>x.classList.add("hidden"));target.classList.remove("hidden");document.querySelectorAll("#nav button[data-page],#mobileNav button[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="sim")setTimeout(refreshSimDayChart,80);if(page==="live")setTimeout(renderLiveMonitor,0);if(page==="intel")setTimeout(renderIntelligence,0);window.scrollTo(0,0)}
+function navigateTo(page){showPage(page)}
+document.getElementById("nav").onclick=e=>{const b=e.target.closest("button[data-page]");if(b)showPage(b.dataset.page)}
+
+function mobileNavActivate(target,event){
+ const b=target&&target.closest?target.closest("#mobileNav button[data-page]"):null;
+ if(!b)return false;
+ if(event){event.preventDefault();event.stopPropagation();}
+ showPage(b.dataset.page);
+ return true;
+}
+document.addEventListener("pointerup",e=>mobileNavActivate(e.target,e),true);
+document.addEventListener("touchend",e=>mobileNavActivate(e.target,e),{capture:true,passive:false});
+document.addEventListener("click",e=>{
+ const b=e.target&&e.target.closest?e.target.closest("#mobileNav button[data-page]"):null;
+ if(!b)return;
+ e.preventDefault();e.stopPropagation();showPage(b.dataset.page);
+},true);
+
+function showPositionForm(){posForm.classList.remove("hidden")} function hidePositionForm(){posForm.classList.add("hidden")}
+function renderPortfolioSummary(){
+ const el=document.getElementById("portfolioSummary");if(!el)return;
+ let invested=0,value=0,covered=0;const groups={Recovery:{i:0,v:0,n:0},Pilot:{i:0,v:0,n:0},Neuinvestment:{i:0,v:0,n:0}};
+ for(const p of db.positions){invested+=+p.invest||0;const l=db.live&&db.live[p.coin],g=groups[p.type]||groups.Neuinvestment;g.i+=+p.invest||0;g.n++;
+  if(l&&isFinite(l.price)){const v=p.qty*l.price;value+=v;covered++;g.v+=v}else{g.v+=+p.invest||0}
+ }
+ const complete=covered===db.positions.length,pl=complete?value-invested:null,pct=pl!=null&&invested?pl/invested*100:null;
+ const box=(title,val,sub,cls="")=>`<div class="card"><div class="muted">${title}</div><div class="metric ${cls}">${val}</div><div class="muted">${sub}</div></div>`;
+ el.innerHTML=box("Investiert",fmtEur(invested),db.positions.length+" Positionen")
+ +box("Aktueller Wert",complete?fmtEur(value):"—",complete?"alle Kurse geladen":covered+"/"+db.positions.length+" Kurse geladen")
+ +box("Gesamt G/V",pl==null?"—":(pl>=0?"+":"")+fmtEur(pl),pct==null?"Kurse aktualisieren":fmtPct(pct),pl==null?"":pl>=0?"green":"red")
+ +box("Bereiche",groups.Recovery.n+" R · "+groups.Pilot.n+" P",groups.Neuinvestment.n+" Neuinvestment");
+}
+function addPosition(){if(!pCoin.value.trim())return alert("Coin fehlt.");db.positions.push({coin:pCoin.value.trim().toUpperCase(),type:pType.value,qty:+pQty.value||0,avg:+pAvg.value||0,invest:+pInvest.value||0});save();hidePositionForm()}
+function delPos(i){if(confirm("Position aus der App entfernen?")){db.positions.splice(i,1);save()}}
+function addRadar(){if(!rCoin.value.trim())return alert("Coin fehlt.");db.radar.push({coin:rCoin.value.trim().toUpperCase(),stage:rStage.value,price:+rPrice.value||0,score:Math.max(0,Math.min(100,+rScore.value||0)),reason:rReason.value.trim(),date:new Date().toISOString()});save();rCoin.value=rPrice.value=rReason.value="";rScore.value=50}
+let tradeEditIndex=null;
+function tradeFromForm(){
+ const qty=+tQty.value||0,price=+tPrice.value||0;
+ if(!tCoin.value.trim())throw new Error("Coin fehlt.");
+ if(!qty||!price)throw new Error("Bitte Menge und Kurs eingeben.");
+ return {coin:tCoin.value.trim().toUpperCase(),side:tSide.value,type:tType.value,qty,price,
+  amount:+tAmount.value||qty*price,stage:tStage.value,reason:tReason.value.trim(),market:tMarket.value.trim(),
+  macro:tMacro.value.trim(),invalid:tInvalid.value.trim(),date:tDate.value?new Date(tDate.value).toISOString():new Date().toISOString()};
+}
+function findTradePos(t){return db.positions.find(p=>p.coin===t.coin&&p.type===t.type)}
+function applyTradeToPortfolio(t){
+ let pos=findTradePos(t);
+ if(t.side==="Kauf"){
+   if(pos){const oldInvest=pos.invest??pos.qty*pos.avg;pos.qty+=t.qty;pos.invest=oldInvest+t.amount;pos.avg=pos.qty?pos.invest/pos.qty:0}
+   else db.positions.push({coin:t.coin,type:t.type,qty:t.qty,avg:t.price,invest:t.amount});
+ }else if(pos){
+   const costRemoved=Math.min(pos.invest||0,t.costBasisRemoved??t.qty*pos.avg);
+   t.costBasisRemoved=costRemoved;
+   pos.qty=Math.max(0,pos.qty-t.qty);pos.invest=Math.max(0,(pos.invest||0)-costRemoved);
+   if(pos.qty>0)pos.avg=pos.invest/pos.qty;else db.positions=db.positions.filter(p=>p!==pos);
+ }
+}
+function reverseTradeFromPortfolio(t){
+ let pos=findTradePos(t);
+ if(t.side==="Kauf"){
+   if(!pos)return;
+   pos.qty=Math.max(0,pos.qty-t.qty);pos.invest=Math.max(0,(pos.invest||0)-t.amount);
+   if(pos.qty>1e-12)pos.avg=pos.invest/pos.qty;else db.positions=db.positions.filter(p=>p!==pos);
+ }else{
+   const restored=t.costBasisRemoved??t.qty*(pos?.avg||t.price);
+   if(pos){pos.qty+=t.qty;pos.invest=(pos.invest||0)+restored;pos.avg=pos.qty?pos.invest/pos.qty:0}
+   else db.positions.push({coin:t.coin,type:t.type,qty:t.qty,avg:restored/t.qty,invest:restored});
+ }
+}
+function addTrade(){
+ let t;try{t=tradeFromForm()}catch(e){return alert(e.message)}
+ if(!db.trades)db.trades=[];
+ if(tradeEditIndex!=null){
+   const old=db.trades[tradeEditIndex];
+   reverseTradeFromPortfolio(old);
+   applyTradeToPortfolio(t);
+   db.trades[tradeEditIndex]=t;
+   tradeEditIndex=null;resetTradeForm();
+ }else{
+   applyTradeToPortfolio(t);db.trades.push(t);resetTradeForm();
+ }
+ save();
+}
+function localDateTimeValue(iso){
+ const d=new Date(iso),pad=n=>String(n).padStart(2,"0");
+ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function editTrade(i){
+ const t=db.trades[i];if(!t)return;
+ tradeEditIndex=i;
+ tCoin.value=t.coin;tSide.value=t.side;tType.value=t.type;tDate.value=localDateTimeValue(t.date);
+ tQty.value=t.qty;tPrice.value=t.price;tAmount.value=t.amount??"";tStage.value=t.stage||"—";
+ tReason.value=t.reason||"";tMarket.value=t.market||"";tMacro.value=t.macro||"";tInvalid.value=t.invalid||"";
+ document.getElementById("tradeSaveBtn").textContent="Änderungen speichern";
+ document.getElementById("tradeCancelBtn").classList.remove("hidden");
+ document.getElementById("tradeEditHint").innerHTML=`✏️ Du bearbeitest <b>${esc(t.coin)} · ${esc(t.side)}</b> vom ${new Date(t.date).toLocaleString("de-DE")}.`;
+ document.getElementById("trades").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function resetTradeForm(){
+ for(const id of ["tCoin","tQty","tPrice","tAmount","tReason","tMarket","tMacro","tInvalid"])document.getElementById(id).value="";
+ tStage.value="—";tSide.value="Kauf";tType.value="Recovery";tDate.value="";
+ const b=document.getElementById("tradeSaveBtn");if(b)b.textContent="Transaktion speichern";
+ document.getElementById("tradeCancelBtn")?.classList.add("hidden");
+ const h=document.getElementById("tradeEditHint");if(h)h.textContent="";
+}
+function cancelTradeEdit(){tradeEditIndex=null;resetTradeForm()}
+function delTrade(i){
+ const t=db.trades[i];if(!t)return;
+ if(confirm(`${t.coin} · ${t.side} wirklich löschen? Der Portfolio-Bestand wird entsprechend zurückgerechnet.`)){
+   reverseTradeFromPortfolio(t);db.trades.splice(i,1);
+   if(tradeEditIndex===i)cancelTradeEdit();else if(tradeEditIndex!=null&&tradeEditIndex>i)tradeEditIndex--;
+   save();
+ }
+}
+
+const CG_IDS={"BTC":"bitcoin","ETH":"ethereum","LINK":"chainlink","XLM":"stellar","CRV":"curve-dao-token","HBAR":"hedera-hashgraph","ONDO":"ondo-finance","POL":"polygon-ecosystem-token","SHIB":"shiba-inu","PEPE":"pepe","ADA":"cardano","FIL":"filecoin","SOL":"solana","ALGO":"algorand","AAVE":"aave","APT":"aptos","ARB":"arbitrum","ATOM":"cosmos","AVAX":"avalanche-2","BCH":"bitcoin-cash","BNB":"binancecoin","CRO":"crypto-com-chain","DOGE":"dogecoin","DOT":"polkadot","ETC":"ethereum-classic","FET":"fetch-ai","GRT":"the-graph","ICP":"internet-computer","IMX":"immutable-x","INJ":"injective-protocol","LDO":"lido-dao","LTC":"litecoin","MKR":"maker","NEAR":"near","OP":"optimism","QNT":"quant-network","RENDER":"render-token","SAND":"the-sandbox","SKY":"sky","SUI":"sui","SUSHI":"sushi","TRX":"tron","UNI":"uniswap","VET":"vechain","XRP":"ripple","XTZ":"tezos","ZEC":"zcash"};
+function priceDigits(v){
+ v=Math.abs(Number(v));
+ if(!isFinite(v))return 2;
+ if(v>=100)return 2;       // BTC/ETH etc.: cents are enough
+ if(v>=1)return 3;         // e.g. 12,345 €
+ if(v>=0.01)return 4;      // most altcoins: 0,1234 €
+ if(v>=0.0001)return 6;    // small-price coins need meaningful precision
+ return 8;                 // SHIB/PEPE etc. must not collapse to 0,0000
+}
+function fmtEur(v){
+ if(v==null||!isFinite(v))return "—";
+ const d=priceDigits(v);
+ return Number(v).toLocaleString("de-DE",{style:"currency",currency:"EUR",minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function fmtPrice(v){
+ if(v==null||!isFinite(v))return "—";
+ const d=priceDigits(v);
+ return Number(v).toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d})+" €";
+}
+function fmtPct(v){return v==null||!isFinite(v)?"—":(v>=0?"+":"")+Number(v).toLocaleString("de-DE",{maximumFractionDigits:2})+"%"}
+async function cgFetch(path){
+ const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),12000);
+ try{
+  const r=await fetch("https://api.coingecko.com/api/v3"+path,{headers:{accept:"application/json"},signal:ctl.signal});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  return await r.json();
+ }catch(e){if(e.name==="AbortError")throw new Error("Zeitüberschreitung");throw e}
+ finally{clearTimeout(tm)}
+}
+async function refreshLive(){
+ const st=document.getElementById("liveStatus"),days=+document.getElementById("liveDays").value||30;
+ const coins=[...new Set(["BTC","ETH","LINK","XLM","CRV",...(db.watch||[]).map(x=>x.coin),...(db.positions||[]).map(x=>x.coin)])].filter(c=>CG_IDS[c]);
+ st.textContent="Aktualisiere "+coins.length+" Coins …";
+ try{
+  const data=await cgFetch("/simple/price?ids="+encodeURIComponent(coins.map(c=>CG_IDS[c]).join(","))+"&vs_currencies=eur&include_24hr_change=true&include_24hr_vol=true&include_last_updated_at=true");
+  db.live=db.live||{};
+  for(const c of coins){const x=data[CG_IDS[c]];if(x)db.live[c]={price:x.eur,change24:x.eur_24h_change,volume24:x.eur_24h_vol,updated:x.last_updated_at}}
+  const hc=[...new Set(["BTC","ETH",...(db.watch||[]).map(x=>x.coin)])].filter(c=>CG_IDS[c]);let ok=0;
+  for(const c of hc){try{const h=await cgFetch("/coins/"+CG_IDS[c]+"/market_chart?vs_currency=eur&days="+days+"&interval=daily");if(h.prices){db.prices[c]=h.prices.map(x=>({date:new Date(x[0]).toISOString().slice(0,10),price:x[1]}));ok++}}catch(e){} await new Promise(r=>setTimeout(r,300))}
+  localStorage.setItem(KEY,JSON.stringify(db));render();renderLiveCards();st.textContent="Aktualisiert: "+new Date().toLocaleString("de-DE")+" · "+coins.length+" Kurse · "+ok+" Historien";
+ }catch(e){st.textContent="Live-Abruf nicht möglich ("+e.message+"). Gespeicherte Daten und CSV-Fallback bleiben nutzbar."}
+}
+function renderLiveCards(){const b=db.live&&db.live.BTC,e=db.live&&db.live.ETH;if(b){btcLive.textContent=fmtEur(b.price);btcChange.textContent=fmtPct(b.change24)+" · 24h";btcChange.className="tag "+(b.change24>=0?"green":"red")}if(e){ethLive.textContent=fmtEur(e.price);ethChange.textContent=fmtPct(e.change24)+" · 24h";ethChange.className="tag "+(e.change24>=0?"green":"red")}}
+let liveMonitorChartObj=null,liveMonitorTimer=null;
+function ensureLiveMonitor(){
+ db.liveMonitor=db.liveMonitor||{coins:["BTC","ETH"],snapshots:[],auto:true};
+ if(!Array.isArray(db.liveMonitor.coins))db.liveMonitor.coins=["BTC","ETH"];
+ if(!Array.isArray(db.liveMonitor.snapshots))db.liveMonitor.snapshots=[];
+ // Busy flags are runtime state and must never remain locked after a reload.
+ if(db.live3hBusy===true)db.live3hBusy=false;
+}
+function fillLiveCoinSelect(){
+ const e=document.getElementById("lmCoin");if(!e)return;
+ e.innerHTML=BISON_LIST.filter(c=>CG_IDS[c]).map(c=>`<option>${c}</option>`).join("");
+}
+function addLiveCoin(){
+ ensureLiveMonitor();const c=document.getElementById("lmCoin").value;
+ if(c&&!db.liveMonitor.coins.includes(c))db.liveMonitor.coins.push(c);
+ save();renderLiveMonitor();
+}
+function removeLiveCoin(c){ensureLiveMonitor();db.liveMonitor.coins=db.liveMonitor.coins.filter(x=>x!==c);save();renderLiveMonitor()}
+function selectWatchForLive(){
+ ensureLiveMonitor();for(const w of (db.watch||[]))if(CG_IDS[w.coin]&&!db.liveMonitor.coins.includes(w.coin))db.liveMonitor.coins.push(w.coin);
+ save();renderLiveMonitor();
+}
+function toggleLiveMonitor(){
+ ensureLiveMonitor();db.liveMonitor.auto=!db.liveMonitor.auto;localStorage.setItem(KEY,JSON.stringify(db));setupLiveMonitorTimer();renderLiveMonitor();
+}
+let liveMonitorNextAt=0,liveMonitorBusy=false,liveRecoveryBusy=false;
+function setupLiveMonitorTimer(delay=30000){
+ ensureLiveMonitor();
+ if(liveMonitorTimer)clearInterval(liveMonitorTimer);
+ liveMonitorTimer=null;
+ if(!db.liveMonitor.auto)return;
+ liveMonitorNextAt=Date.now()+delay;
+ // First tick can be sooner; afterwards cadence is independent from slower auxiliary jobs.
+ setTimeout(()=>{if(db.liveMonitor.auto)liveMonitorRefresh(false)},Math.min(delay,30000));
+ liveMonitorTimer=setInterval(()=>{
+   if(!db.liveMonitor.auto)return;
+   liveMonitorNextAt=Date.now()+30000;
+   liveMonitorRefresh(false);
+ },30000);
+}
+async function recoverLiveWindow(reason="resume"){
+ ensureLiveMonitor();
+ if(liveRecoveryBusy||!db.liveMonitor.auto)return;
+ const coins=db.liveMonitor.coins.filter(c=>CG_IDS[c]);
+ if(!coins.length)return;
+ liveRecoveryBusy=true;
+ const st=document.getElementById("liveMonitorStatus");
+ if(st)st.textContent="🔄 Stelle die aktuellen letzten 10 Minuten wieder her …";
+ try{
+   const cutoff=Date.now()-10*60*1000,buckets={};
+   // Keep already collected recent points.
+   for(const x of db.liveMonitor.snapshots.filter(x=>x.t>=cutoff)){
+     const t=Math.floor(x.t/30000)*30000;
+     buckets[t]=buckets[t]||{t,v:{}};
+     Object.assign(buckets[t].v,x.v||{});
+   }
+   // CoinGecko intraday history fills gaps caused by sleep/background throttling.
+   for(const c of coins){
+     try{
+       const h=await cgFetch("/coins/"+CG_IDS[c]+"/market_chart?vs_currency=eur&days=1");
+       for(const x of (h.prices||[])){
+         if(x[0]<cutoff||x[0]>Date.now()+60000)continue;
+         const t=Math.floor(x[0]/30000)*30000;
+         buckets[t]=buckets[t]||{t,v:{}};
+         buckets[t].v[c]=x[1];
+       }
+     }catch(e){}
+     await new Promise(r=>setTimeout(r,700));
+   }
+   const older=db.liveMonitor.snapshots.filter(x=>x.t<cutoff);
+   const recent=Object.values(buckets).sort((a,b)=>a.t-b.t);
+   db.liveMonitor.snapshots=[...older,...recent].filter(x=>x.t>=Date.now()-6*3600*1000).slice(-1500);
+   localStorage.setItem(KEY,JSON.stringify(db));
+   renderLiveMonitor();
+   if(st)st.textContent="🟢 Dauerbetrieb wiederhergestellt · 10-Minuten-Fenster aufgefüllt · "+new Date().toLocaleTimeString("de-DE");
+ }finally{liveRecoveryBusy=false}
+ // Always append a genuinely current quote after recovery.
+ liveMonitorRefresh(false);
+}
+function liveMonitorHeartbeat(){
+ ensureLiveMonitor();
+ if(!db.liveMonitor.auto)return;
+ // If the browser has throttled the tab, restore the rolling window instead of starting from zero.
+ const last=db.liveMonitor.snapshots.length?db.liveMonitor.snapshots.at(-1).t:0,gap=last?Date.now()-last:Infinity;
+ if(gap>180000)recoverLiveWindow("heartbeat");
+ else if(gap>75000)liveMonitorRefresh(false);
+}
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")liveMonitorHeartbeat();
+});
+window.addEventListener("focus",liveMonitorHeartbeat);
+window.addEventListener("pageshow",liveMonitorHeartbeat);
+setInterval(liveMonitorHeartbeat,15000);
+async function refresh3hChanges(coins){
+ db.live3h=db.live3h||{};const target=Date.now()-10800000;
+ for(const c of coins){try{const h=await cgFetch("/coins/"+CG_IDS[c]+"/market_chart?vs_currency=eur&days=1");if(h.prices&&h.prices.length>1){const last=h.prices.at(-1),base=h.prices.reduce((a,x)=>Math.abs(x[0]-target)<Math.abs(a[0]-target)?x:a,h.prices[0]);if(base[1])db.live3h[c]=(last[1]/base[1]-1)*100}}catch(e){} await new Promise(r=>setTimeout(r,180))}
+}
+async function liveMonitorRefresh(manual){
+ ensureLiveMonitor();const coins=db.liveMonitor.coins.filter(c=>CG_IDS[c]),st=document.getElementById("liveMonitorStatus");
+ if(liveMonitorBusy)return;
+ if(!coins.length){if(st)st.textContent="Bitte mindestens einen Coin auswählen.";return}
+ liveMonitorBusy=true;
+ if(st)st.textContent="🟢 Dauerbetrieb aktiv · aktualisiere "+coins.length+" Coins …";
+ try{
+  const ids=coins.map(c=>CG_IDS[c]).join(",");
+  const data=await cgFetch("/simple/price?ids="+encodeURIComponent(ids)+"&vs_currencies=eur&include_24hr_change=true&include_24hr_vol=true&include_last_updated_at=true");
+  const now=Date.now(),vals={};db.live=db.live||{};
+  for(const c of coins){const x=data[CG_IDS[c]];if(x){vals[c]=x.eur;db.live[c]={price:x.eur,change24:x.eur_24h_change,volume24:x.eur_24h_vol,updated:x.last_updated_at}}}
+  db.liveMonitor.snapshots.push({t:now,v:vals});
+  archiveHourlyPrices(now,vals);
+  // Live snapshots stay lightweight; auxiliary 3h calculation runs separately.
+  db.liveMonitor.snapshots=db.liveMonitor.snapshots.filter(x=>x.t>=now-6*3600*1000).slice(-1500);
+  db.live3hUpdated=db.live3hUpdated||0;
+  if((now-db.live3hUpdated>1800000)&&!db.live3hBusy){
+    db.live3hBusy=true;db.live3hUpdated=now;
+    refresh3hChanges(coins).then(()=>{localStorage.setItem(KEY,JSON.stringify(db));renderLiveMonitor()}).finally(()=>{db.live3hBusy=false});
+  }
+  updateAdaptiveForecasts();localStorage.setItem(KEY,JSON.stringify(db));render();renderLiveCards();settleForecasts();makeForecasts(false);renderLiveMonitor();
+  if(st)st.textContent="🟢 Live-Daten OK · zuletzt "+new Date(now).toLocaleTimeString("de-DE")+" · nächster Abruf ca. "+new Date(now+30*1000).toLocaleTimeString("de-DE");
+ }catch(e){
+   if(st)st.textContent="🟠 Abruf kurz fehlgeschlagen ("+e.message+"). Dauerbetrieb bleibt aktiv; nächster Versuch automatisch.";
+ }finally{
+   liveMonitorBusy=false;
+ }
+}
+
+
+function archiveHourlyPrices(t,vals){
+ db.hourlyArchive=db.hourlyArchive||{};
+ const cutoff=t-21*24*3600*1000;
+ for(const [c,p] of Object.entries(vals||{})){
+   if(!Number.isFinite(p))continue;
+   const a=db.hourlyArchive[c]=Array.isArray(db.hourlyArchive[c])?db.hourlyArchive[c]:[];
+   const hour=Math.floor(t/3600000)*3600000,last=a.at(-1);
+   if(last&&last.t===hour)last.p=p;else a.push({t:hour,p});
+   db.hourlyArchive[c]=a.filter(x=>x.t>=cutoff).slice(-600);
+ }
+}
+function ensureForecastLab(){
+ if(!db.forecastLab)db.forecastLab={items:[],lastAuto:0};
+ if(!Array.isArray(db.forecastLab.items))db.forecastLab.items=[];
+}
+function forecastFeatures(c){
+ ensureLiveMonitor();
+ const now=Date.now(),ss=(db.liveMonitor.snapshots||[]).filter(x=>x.t>=now-30*60000&&x.v&&x.v[c]!=null);
+ if(ss.length<8)return null;
+ const pxAt=(mins)=>{
+   const target=now-mins*60000,a=ss.reduce((best,x)=>Math.abs(x.t-target)<Math.abs(best.t-target)?x:best,ss[0]);
+   return Math.abs(a.t-target)<=Math.max(90000,mins*60000*.45)?a.v[c]:null;
+ };
+ const last=ss.at(-1).v[c],p2=pxAt(2),p5=pxAt(5),p10=pxAt(10),p30=pxAt(30);
+ const ret=(p)=>p?((last/p)-1)*100:null;
+ const r2=ret(p2),r5=ret(p5),r10=ret(p10),r30=ret(p30);
+ const base=db.liveMonitor.coins.includes("BTC")&&c!=="BTC"?"BTC":(db.liveMonitor.coins.includes("ETH")&&c!=="ETH"?"ETH":null);
+ let rel10=null;
+ if(base){
+   const bs=(db.liveMonitor.snapshots||[]).filter(x=>x.t>=now-10*60000&&x.v&&x.v[base]!=null);
+   if(bs.length>1)rel10=r10-((bs.at(-1).v[base]/bs[0].v[base]-1)*100);
+ }
+ const vals=ss.slice(-21).map(x=>x.v[c]).filter(Boolean),rets=[];
+ for(let i=1;i<vals.length;i++)rets.push((vals[i]/vals[i-1]-1)*100);
+ const vol=rets.length?Math.sqrt(rets.reduce((a,x)=>a+x*x,0)/rets.length):0;
+ return {last,r2,r5,r10,r30,rel10,vol,count:ss.length};
+}
+function buildForecast(c){
+ const f=forecastFeatures(c);if(!f||f.r10==null)return null;
+ // Transparent heuristic V1: deliberately conservative; later calibrated from our own track record.
+ let edge=0;
+ edge+=Math.max(-1.2,Math.min(1.2,f.r10))*0.34;
+ if(f.r5!=null)edge+=Math.max(-1,Math.min(1,f.r5))*0.24;
+ if(f.r2!=null)edge+=Math.max(-.8,Math.min(.8,f.r2))*0.14;
+ if(f.rel10!=null)edge+=Math.max(-1,Math.min(1,f.rel10))*0.22;
+ if(f.r30!=null)edge+=Math.max(-1.5,Math.min(1.5,f.r30))*0.06;
+ const signal=Math.abs(edge),confidence=Math.round(Math.max(50,Math.min(78,50+signal*20+Math.min(6,f.count/20))));
+ const direction=edge>.08?"up":edge<-.08?"down":"flat";
+ const mid=Math.max(-1.5,Math.min(1.5,edge*.65));
+ const band=Math.max(.25,Math.min(1.8,.35+f.vol*5));
+ const t=Date.now(),due=t+30*60000,targetPrice=f.last*(1+mid/100),lowPrice=f.last*(1+(mid-band)/100),highPrice=f.last*(1+(mid+band)/100);
+ const d=new Date(t);
+ return {coin:c,t,due,start:f.last,targetPrice,lowPrice,highPrice,direction,confidence,mid,low:mid-band,high:mid+band,
+   adaptivePrice:targetPrice,adaptiveUpdated:t,adaptiveHistory:[{t,price:targetPrice}],
+   hour:d.getHours(),minute:d.getMinutes(),weekday:d.getDay(),
+   features:{r2:f.r2,r5:f.r5,r10:f.r10,r30:f.r30,rel10:f.rel10,vol:f.vol,count:f.count},status:"open"};
+}
+
+function updateAdaptiveForecasts(){
+ ensureForecastLab();ensureLiveMonitor();
+ const now=Date.now();
+ for(const f of db.forecastLab.items){
+   if(f.status!=="open"||now>=f.due)continue;
+   const live=db.live&&db.live[f.coin];if(!live||!live.price)continue;
+   const feat=forecastFeatures(f.coin);if(!feat||feat.r10==null)continue;
+   const remaining=Math.max(1,(f.due-now)/60000);
+   let edge=0;
+   edge+=Math.max(-1.2,Math.min(1.2,feat.r10))*0.34;
+   if(feat.r5!=null)edge+=Math.max(-1,Math.min(1,feat.r5))*0.24;
+   if(feat.r2!=null)edge+=Math.max(-.8,Math.min(.8,feat.r2))*0.14;
+   if(feat.rel10!=null)edge+=Math.max(-1,Math.min(1,feat.rel10))*0.22;
+   if(feat.r30!=null)edge+=Math.max(-1.5,Math.min(1.5,feat.r30))*0.06;
+   // Scale the fresh 30-min edge to the time still remaining to the ORIGINAL target time.
+   const fresh30=Math.max(-1.5,Math.min(1.5,edge*.65));
+   const scaled=fresh30*Math.min(1,remaining/30);
+   const candidate=live.price*(1+scaled/100);
+   // The adaptive target is deliberately independent from the immutable original target.
+   // It answers: "Given what we know NOW, where do we expect the price at the SAME original due time?"
+   // Therefore it may finish clearly above or below the original forecast.
+   const original=f.targetPrice??f.start*(1+(f.mid||0)/100);
+   const adaptive=candidate;
+   f.adaptivePrice=adaptive;f.adaptiveUpdated=now;
+   f.adaptiveHistory=Array.isArray(f.adaptiveHistory)?f.adaptiveHistory:[{t:f.t,price:original}];
+   const last=f.adaptiveHistory.at(-1);
+   if(!last||now-last.t>=45000)f.adaptiveHistory.push({t:now,price:adaptive});
+   f.adaptiveHistory=f.adaptiveHistory.slice(-80);
+ }
+}
+function makeForecasts(manual=false){
+ ensureForecastLab();ensureLiveMonitor();
+ const now=Date.now();
+ if(!manual&&now-db.forecastLab.lastAuto<5*60000)return;
+ const made=[];
+ for(const c of db.liveMonitor.coins){
+   const fc=buildForecast(c);if(!fc)continue;
+   const lastOpen=[...db.forecastLab.items].reverse().find(x=>x.coin===c&&x.status==="open");
+   if(!manual&&lastOpen&&now-lastOpen.t<5*60000)continue;
+   db.forecastLab.items.push(fc);made.push(fc);
+ }
+ if(made.length)db.forecastLab.lastAuto=now;
+ db.forecastLab.items=db.forecastLab.items.slice(-1200);
+ localStorage.setItem(KEY,JSON.stringify(db));renderForecastLab();
+}
+function settleForecasts(){
+ ensureForecastLab();const now=Date.now(),sn=db.liveMonitor.snapshots||[];let changed=false;
+ for(const f of db.forecastLab.items){
+   if(f.status!=="open"||now<f.due)continue;
+   const cand=sn.filter(x=>x.v&&x.v[f.coin]!=null&&Math.abs(x.t-f.due)<=6*60000).sort((a,b)=>Math.abs(a.t-f.due)-Math.abs(b.t-f.due))[0];
+   const live=db.live&&db.live[f.coin];
+   const end=cand?cand.v[f.coin]:(now-f.due<10*60000&&live?live.price:null);
+   if(end==null)continue;
+   f.end=end;f.actual=(end/f.start-1)*100;
+   if(f.targetPrice==null)f.targetPrice=f.start*(1+(f.mid||0)/100);
+   f.errorPct=(f.targetPrice/end-1)*100;
+   f.absErrorPct=Math.abs(f.errorPct);
+   if(f.adaptivePrice==null)f.adaptivePrice=f.targetPrice;
+   f.adaptiveErrorPct=(f.adaptivePrice/end-1)*100;
+   f.adaptiveAbsErrorPct=Math.abs(f.adaptiveErrorPct);
+   const ah=Array.isArray(f.adaptiveHistory)?f.adaptiveHistory:[];
+   const checkpoint=ah.filter(x=>x.t<=f.due-10*60000).sort((a,b)=>b.t-a.t)[0]||ah[0];
+   f.adaptiveCheckpointPrice=checkpoint?.price??f.adaptivePrice;
+   f.adaptiveCheckpointLead=checkpoint?Math.max(0,(f.due-checkpoint.t)/60000):0;
+   f.adaptiveCheckpointErrorPct=Math.abs((f.adaptiveCheckpointPrice/end-1)*100);
+   f.adaptiveWins=f.adaptiveCheckpointErrorPct<f.absErrorPct;
+   f.naiveErrorPct=Math.abs((f.start/end-1)*100);
+   f.beatsNaive=f.absErrorPct<f.naiveErrorPct;
+   f.adaptiveBeatsNaive=f.adaptiveAbsErrorPct<f.naiveErrorPct;
+   const actualDir=f.actual>.08?"up":f.actual<-.08?"down":"flat";
+   f.hit=actualDir===f.direction;
+   f.inBand=f.actual>=f.low&&f.actual<=f.high;
+   f.status="settled";f.settledAt=now;changed=true;
+ }
+ if(changed)localStorage.setItem(KEY,JSON.stringify(db));
+}
+
+function cSafe(s){return String(s).replace(/[^A-Za-z0-9_-]/g,"_")}
+let forecastMiniCharts={};
+function drawForecastMiniCharts(){
+ ensureForecastLab();
+ const now=Date.now(),sn=db.liveMonitor?.snapshots||[];
+ for(const c of db.liveMonitor.coins){
+   const cv=document.getElementById("forecastMini_"+cSafe(c));if(!cv)continue;
+   const open=[...db.forecastLab.items].reverse().find(x=>x.coin===c&&x.status==="open");if(!open)continue;
+   if(forecastMiniCharts[c]){forecastMiniCharts[c].destroy();delete forecastMiniCharts[c]}
+   // Actual path: last 30 minutes through NOW. Forecast path: forecasts made over the last 60 min,
+   // plotted at their target time, so the forecast line continuously runs 30 min ahead.
+   const actual=sn.filter(x=>x.t>=now-30*60000&&x.v&&x.v[c]!=null).map(x=>({x:x.t,y:x.v[c]}));
+   const forecasts=db.forecastLab.items.filter(x=>x.coin===c&&x.t>=now-60*60000).map(x=>({x:x.due,y:x.targetPrice??x.start*(1+(x.mid||0)/100)})).sort((a,b)=>a.x-b.x);
+   // Add latest actual point to visually connect the two time horizons without changing forecast history.
+   const adaptive=(open.adaptiveHistory||[]).map(x=>({x:x.t,y:x.price}));
+   if(open.adaptivePrice!=null)adaptive.push({x:open.due,y:open.adaptivePrice});
+   const datasets=[
+     {label:"Aktueller Kurs",data:actual,borderWidth:2,pointRadius:0,tension:.18,spanGaps:true},
+     {label:"Original T+30",data:forecasts,borderWidth:2,pointRadius:1.5,tension:.18,spanGaps:true,borderDash:[5,4]},
+     {label:"🧠 Adaptiv",data:adaptive,borderWidth:2,pointRadius:1,tension:.18,spanGaps:true,borderDash:[2,3]}
+   ];
+   // Portfolio break-even: weighted average entry of all currently held positions for this coin.
+   const held=(db.positions||[]).filter(p=>p.coin===c&&Number(p.qty)>0);
+   const beQty=held.reduce((a,p)=>a+Number(p.qty||0),0);
+   const beInvest=held.reduce((a,p)=>a+Number(p.invest??(Number(p.qty||0)*Number(p.avg||0))),0);
+   const breakEven=beQty>0?beInvest/beQty:null;
+   const currentPx=actual.length?actual.at(-1).y:(db.live?.[c]?.price??null);
+   const beDistance=(Number.isFinite(breakEven)&&Number.isFinite(currentPx)&&currentPx>0)?Math.abs(breakEven/currentPx-1)*100:null;
+   // Keep the chart focused on real short-term motion. A distant break-even would flatten
+   // the visible price swings by forcing the y-axis to include it.
+   if(Number.isFinite(breakEven)&&breakEven>0&&beDistance!=null&&beDistance<=5){
+     datasets.push({label:"⚖️ Break-even "+fmtPrice(breakEven),data:[{x:now-30*60000,y:breakEven},{x:now+30*60000,y:breakEven}],borderWidth:2,pointRadius:0,tension:0,spanGaps:true,borderDash:[8,5]});
+   }
+   forecastMiniCharts[c]=new Chart(cv,{type:"line",data:{datasets},options:{maintainAspectRatio:false,responsive:true,animation:false,parsing:false,interaction:{mode:"nearest",intersect:false},
+     plugins:{legend:{display:true,labels:{color:"#8ca3af",boxWidth:12,font:{size:9}}},tooltip:{callbacks:{title:it=>new Date(it[0].parsed.x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),label:it=>it.dataset.label+": "+fmtPrice(it.parsed.y)}}},
+     scales:{x:{type:"linear",min:now-30*60000,max:now+30*60000,ticks:{color:"#8ca3af",font:{size:9},maxTicksLimit:5,callback:v=>new Date(v).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})},grid:{color:"#20384744"}},
+       y:{ticks:{color:"#8ca3af",font:{size:9},maxTicksLimit:4},grid:{color:"#20384744"}}}}});
+ }
+}
+function renderForecastLab(){
+ const root=document.getElementById("forecastNow");if(!root)return;ensureForecastLab();settleForecasts();
+ const latest=db.liveMonitor.coins.map(c=>[...db.forecastLab.items].reverse().find(x=>x.coin===c&&x.status==="open")).filter(Boolean);
+ const dir=f=>f.direction==="up"?"🟢 höher":f.direction==="down"?"🔴 tiefer":"⚪ seitwärts";
+ root.innerHTML=latest.length?latest.map(f=>{
+   const tp=f.targetPrice??f.start*(1+f.mid/100),lp=f.lowPrice??f.start*(1+f.low/100),hp=f.highPrice??f.start*(1+f.high/100);
+   return `<div class="card" style="box-shadow:none"><div class="coin"><b>${esc(f.coin)}</b><span class="tag">${dir(f)}</span></div>
+   <div class="muted" style="margin-top:8px">Kurs Messpunkt</div><div style="font-size:18px"><b>${fmtEur(f.start)}</b></div>
+   <div class="muted" style="margin-top:8px">🎯 Original T+30</div><div class="metric">${fmtEur(tp)}</div>
+   <div class="muted">${f.mid>=0?"+":""}${f.mid.toFixed(2)} % · Range ${fmtEur(lp)} – ${fmtEur(hp)}</div>
+   <div class="muted" style="margin-top:6px">🧠 Adaptive Prognose · gleicher Zeitpunkt, eigener Zielkurs</div><div style="font-size:18px"><b>${fmtEur(f.adaptivePrice??tp)}</b></div>
+   <div style="margin-top:7px">Confidence <b>${f.confidence}/100</b></div>
+   <div class="muted">Messpunkt ${new Date(f.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} · Zielzeit ${new Date(f.due).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
+   <div class="muted">10m ${f.features.r10==null?"—":fmtPct(f.features.r10)}${f.features.rel10==null?"":" · rel. Benchmark "+fmtPct(f.features.rel10)}</div>
+   <div style="height:118px;margin-top:7px"><canvas id="forecastMini_${cSafe(f.coin)}"></canvas></div>
+   <div class="muted" style="text-align:center">Aktuell ─────────────── 🎯 Prognose +30 Min</div>
+   ${(()=>{
+      const ps=(db.positions||[]).filter(p=>p.coin===f.coin&&Number(p.qty)>0),q=ps.reduce((a,p)=>a+Number(p.qty||0),0),inv=ps.reduce((a,p)=>a+Number(p.invest??(Number(p.qty||0)*Number(p.avg||0))),0),be=q?inv/q:null;
+      if(!be)return "";
+      const live=db.live?.[f.coin]?.price,dist=live?((be/live)-1)*100:null;
+      const absDist=dist==null?null:Math.abs(dist);
+      const lineState=absDist==null?"":(absDist<=5?" · Linie eingeblendet":" · Linie ab 5 % Nähe");
+      return `<div class="muted" style="margin-top:4px">⚖️ Break-even <b>${fmtPrice(be)}</b>${dist==null?"":` · vom aktuellen Kurs ${dist>=0?"+":""}${dist.toFixed(2)} %`}${lineState}</div>`;
+   })()}${liveIntelHtml(f.coin)}</div>`;
+ }).join(""):'<div class="card" style="box-shadow:none"><b>Noch keine belastbare Prognose.</b><div class="muted">Wir brauchen zunächst genügend zusammenhängende Live-Messpunkte. Danach friert das Labor automatisch etwa alle 5 Minuten eine T+30-Prognose ein.</div></div>';
+
+ const settled=db.forecastLab.items.filter(x=>x.status==="settled"),hits=settled.filter(x=>x.hit).length,bands=settled.filter(x=>x.inBand).length;
+ const hi=settled.filter(x=>x.confidence>=65),hih=hi.filter(x=>x.hit).length,beat=settled.filter(x=>x.beatsNaive).length;
+ const mae=settled.length?settled.reduce((a,x)=>a+(x.absErrorPct??Math.abs(((x.targetPrice??x.start*(1+(x.mid||0)/100))/x.end-1)*100)),0)/settled.length:null;
+ const adaptiveSet=settled.filter(x=>x.adaptiveCheckpointErrorPct!=null),adaptiveMae=adaptiveSet.length?adaptiveSet.reduce((a,x)=>a+x.adaptiveCheckpointErrorPct,0)/adaptiveSet.length:null;
+ const adaptiveWins=adaptiveSet.filter(x=>x.adaptiveWins).length;
+ document.getElementById("forecastBadge").textContent=settled.length?`${settled.length} geprüft · Ø Fehler ${mae.toFixed(2)} %`:"noch keine T+30-Auswertung";
+
+ const buckets=[{n:"00–06",a:0,b:6},{n:"06–10",a:6,b:10},{n:"10–14",a:10,b:14},{n:"14–18",a:14,b:18},{n:"18–22",a:18,b:22},{n:"22–24",a:22,b:24}];
+ const timeRows=buckets.map(b=>{
+   const xs=settled.filter(f=>{const h=f.hour??new Date(f.t).getHours();return h>=b.a&&h<b.b});
+   if(!xs.length)return `<tr><td>${b.n}</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>`;
+   const e=xs.reduce((a,x)=>a+(x.absErrorPct??0),0)/xs.length,hr=xs.filter(x=>x.hit).length/xs.length*100,bn=xs.filter(x=>x.beatsNaive).length/xs.length*100;
+   return `<tr><td><b>${b.n} Uhr</b></td><td>${xs.length}</td><td>${e.toFixed(2)} %</td><td>${Math.round(hr)} %</td><td>${Math.round(bn)} %</td></tr>`;
+ }).join("");
+ const recent=settled.slice(-20).reverse();
+
+ document.getElementById("forecastTrack").innerHTML=`<div class="grid market">
+ <div class="card" style="box-shadow:none"><div class="muted">Geprüfte Forecasts</div><div class="metric">${settled.length}</div></div>
+ <div class="card" style="box-shadow:none"><div class="muted">Ø Kursfehler</div><div class="metric">${mae==null?"—":mae.toFixed(2)+" %"}</div></div>
+ <div class="card" style="box-shadow:none"><div class="muted">Richtung richtig</div><div class="metric">${settled.length?Math.round(hits/settled.length*100)+" %":"—"}</div></div>
+ <div class="card" style="box-shadow:none"><div class="muted">Besser als „Kurs bleibt gleich“</div><div class="metric">${settled.length?Math.round(beat/settled.length*100)+" %":"—"}</div></div></div>
+ <div class="grid two section"><div class="card" style="box-shadow:none"><h3>🕒 Lernen nach Tageszeit</h3><div class="scroll"><table><thead><tr><th>Zeit</th><th>N</th><th>Ø Fehler</th><th>Richtung</th><th>vs. Naiv</th></tr></thead><tbody>${timeRows}</tbody></table></div><div class="muted section">Je kleiner der Ø Kursfehler, desto genauer. „vs. Naiv“ zeigt, wie oft unser Forecast besser war als die Annahme, dass der Kurs 30 Minuten unverändert bleibt.</div></div>
+ <div class="card" style="box-shadow:none"><h3>🎯 Original vs. 🧠 Adaptiv</h3><p>Original Ø Fehler: <b>${mae==null?"—":mae.toFixed(2)+" %"}</b></p><p>Adaptiv Ø Fehler: <b>${adaptiveMae==null?"—":adaptiveMae.toFixed(2)+" %"}</b></p><p>Adaptiv schlägt Original: <b>${adaptiveSet.length?Math.round(adaptiveWins/adaptiveSet.length*100)+" %":"—"}</b></p><p>Im Original-Prognosebereich: <b>${settled.length?Math.round(bands/settled.length*100)+" %":"—"}</b></p><p class="muted">Die Original-Prognose bleibt unverändert. Die adaptive Linie darf am gleichen Zielzeitpunkt einen eigenen Zielkurs haben. Für den fairen Qualitätsvergleich verwenden wir den letzten adaptiven Stand mit mindestens ca. 10 Minuten Restlaufzeit – nicht den praktisch schon bekannten Kurs direkt am Ziel.</p></div></div>
+ ${recent.length?`<div class="scroll section"><table><thead><tr><th>Messzeit</th><th>Coin</th><th>Startkurs</th><th>🎯 Original</th><th>🧠 Adaptiv</th><th>Tatsächlich T+30</th><th>Orig. Fehler</th><th>Adapt. Fehler</th><th>Sieger</th></tr></thead><tbody>${recent.map(f=>{const tp=f.targetPrice??f.start*(1+(f.mid||0)/100),er=f.absErrorPct??Math.abs((tp/f.end-1)*100);return `<tr><td>${new Date(f.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td><td><b>${esc(f.coin)}</b></td><td>${fmtEur(f.start)}</td><td><b>${fmtEur(tp)}</b></td><td>${fmtEur(f.adaptiveCheckpointPrice??f.adaptivePrice??tp)}</td><td>${fmtEur(f.end)}</td><td>${er.toFixed(2)} %</td><td>${f.adaptiveCheckpointErrorPct==null?"—":f.adaptiveCheckpointErrorPct.toFixed(2)+" %"}</td><td>${f.adaptiveWins?"🧠":"🎯"}</td></tr>`}).join("")}</tbody></table></div>`:"<p class='muted section'>Die erste echte Bewertung erscheint 30 Minuten nach der ersten eingefrorenen Prognose.</p>"}`;
+ setTimeout(drawForecastMiniCharts,0);
+}
+function renderLiveMonitor(){
+ const root=document.getElementById("lmSelected");if(!root)return;ensureLiveMonitor();fillLiveCoinSelect();
+ document.getElementById("liveToggle").textContent="Auto: "+(db.liveMonitor.auto?"AN":"AUS");
+ root.innerHTML=db.liveMonitor.coins.length?db.liveMonitor.coins.map(c=>`<span class="tag" style="margin:3px">${c} <button onclick="removeLiveCoin('${c}')" style="padding:1px 5px;margin-left:4px">×</button></span>`).join(""):`<span class="muted">Noch keine Coins gewählt.</span>`;
+ const last=db.liveMonitor.snapshots[db.liveMonitor.snapshots.length-1],tbl=document.getElementById("lmTable");
+ tbl.innerHTML=`<div class="scroll"><table><thead><tr><th>Coin</th><th>Kurs</th><th>10 Min</th><th>3 h</th><th>24 h</th><th>Portfolio G/V</th></tr></thead><tbody>${db.liveMonitor.coins.map(c=>{const l=db.live&&db.live[c],p=(db.positions||[]).find(x=>x.coin===c),ss=(db.liveMonitor.snapshots||[]).filter(x=>x.t>=Date.now()-600000&&x.v[c]!=null),p10=ss.length>1?(ss.at(-1).v[c]/ss[0].v[c]-1)*100:null,p3=db.live3h&&db.live3h[c]!=null?db.live3h[c]:null,val=p&&l?p.qty*l.price:null,pl=val!=null?val-p.invest:null,plp=pl!=null&&p.invest?pl/p.invest*100:null;return `<tr><td><b>${c}</b>${p?`<div class="muted">${esc(p.type)}</div>`:""}</td><td>${l?fmtEur(l.price):"—"}</td><td class="${p10==null?"":p10>=0?"green":"red"}">${p10==null?"—":fmtPct(p10)}</td><td class="${p3==null?"":p3>=0?"green":"red"}">${p3==null?"—":fmtPct(p3)}</td><td class="${l?(l.change24>=0?"green":"red"):""}">${l?fmtPct(l.change24):"—"}</td><td class="${pl==null?"":pl>=0?"green":"red"}">${pl==null?"—":`${pl>=0?"+":""}${fmtEur(pl)}<div class="muted">${fmtPct(plp)}</div>`}</td></tr>`}).join("")}</tbody></table></div>`;
+ const mobile=document.getElementById("lmMobileCards");if(mobile)mobile.innerHTML=db.liveMonitor.coins.map(c=>{const l=db.live&&db.live[c],p=(db.positions||[]).find(x=>x.coin===c),ss=(db.liveMonitor.snapshots||[]).filter(x=>x.t>=Date.now()-600000&&x.v[c]!=null),p10=ss.length>1?(ss.at(-1).v[c]/ss[0].v[c]-1)*100:null,p3=db.live3h&&db.live3h[c]!=null?db.live3h[c]:null,val=p&&l?p.qty*l.price:null,pl=val!=null?val-p.invest:null,plp=pl!=null&&p.invest?pl/p.invest*100:null,intel=intelForCoin(c),ev=intel.find(x=>x.eventDate),d=ev?daysToEvent(ev):null;const stat=(label,val,cls="")=>`<div class="lm-mobile-stat"><div class="muted">${label}</div><b class="${cls}">${val}</b></div>`;return `<div class="lm-mobile-card" onclick="openCoinDetail('${c}')"><div class="lm-mobile-head"><div><div class="lm-mobile-symbol">${c}</div><div class="muted">${p?esc(p.type):"Beobachtung"}${intel.length?` · 🧠 ${intel.length}`:""}${d!=null?` · 📅 ${d>=0?"+"+d:d}T`:""}</div></div><div class="lm-mobile-price">${l?fmtEur(l.price):"—"}</div></div><div class="lm-mobile-grid">${stat("10 Min",p10==null?"—":fmtPct(p10),p10==null?"":p10>=0?"green":"red")}${stat("3 h",p3==null?"—":fmtPct(p3),p3==null?"":p3>=0?"green":"red")}${stat("24 h",l?fmtPct(l.change24):"—",l?(l.change24>=0?"green":"red"):"")}</div>${p?`<div class="muted" style="margin-top:7px">Portfolio: <span class="${pl==null?"":pl>=0?"green":"red"}">${pl==null?"—":`${pl>=0?"+":""}${fmtEur(pl)} · ${fmtPct(plp)}`}</span></div>`:""}</div>`}).join("");
+ drawLiveMonitorChart();
+ renderSniffer();
+ renderForecastLab();
+}
+function calcSniffer(){
+ ensureLiveMonitor();
+ const cutoff=Date.now()-10*60*1000,snaps=db.liveMonitor.snapshots.filter(x=>x.t>=cutoff);
+ if(snaps.length<3)return [];
+ const baseCoin=db.liveMonitor.coins.includes("BTC")?"BTC":(db.liveMonitor.coins.includes("ETH")?"ETH":null);
+ const perf=c=>{const a=snaps.map(x=>x.v[c]).filter(v=>v!=null);return a.length>1?(a[a.length-1]/a[0]-1)*100:null};
+ const halfPerf=c=>{const a=snaps.map(x=>x.v[c]).filter(v=>v!=null);if(a.length<3)return null;const m=Math.floor(a.length/2);return (a[a.length-1]/a[m]-1)*100};
+ const hold=c=>{const a=snaps.map(x=>x.v[c]).filter(v=>v!=null);if(a.length<3)return 0;const mx=Math.max(...a),last=a[a.length-1];return mx?last/mx:0};
+ const bp=baseCoin?perf(baseCoin):0;
+ return db.liveMonitor.coins.map(c=>{
+   const p=perf(c),h=halfPerf(c),rel=p==null?null:p-(bp||0),ret=hold(c);
+   if(p==null)return null;
+   let score=0,reasons=[];
+   if(p>=0.25){score+=18;reasons.push("10-Min-Bewegung "+fmtPct(p))}
+   if(p>=0.60){score+=12}
+   if(rel!=null&&rel>=0.20){score+=22;reasons.push("relative Stärke "+fmtPct(rel)+" vs. "+baseCoin)}
+   if(rel!=null&&rel>=0.50){score+=10}
+   if(h!=null&&h>0&&p>h*1.35){score+=16;reasons.push("Bewegung beschleunigt")}
+   if(ret>=0.995&&p>0.15){score+=12;reasons.push("Gewinne werden gehalten")}
+   const l=db.live&&db.live[c];
+   if(l&&l.change24>0){score+=5}
+   score=Math.min(100,score);
+   let stage=score>=70?"👃 EARLY MOTION":score>=50?"🔎 MOTION PRIMING":score>=35?"👀 auffällig":"—";
+   return {coin:c,score,stage,p,rel,h,ret,reasons};
+ }).filter(x=>x&&x.score>=35).sort((a,b)=>b.score-a.score);
+}
+function renderSniffer(){
+ const box=document.getElementById("snifferAlerts"),badge=document.getElementById("snifferBadge");if(!box)return;
+ const n=db.liveMonitor?.snapshots?.filter(x=>x.t>=Date.now()-10*60*1000).length||0,arr=calcSniffer();
+ badge.textContent=n<3?"lernt · "+n+" Punkte":arr.length?arr.length+" auffällig":"ruhig";
+ if(n<3){box.innerHTML='<p class="muted">Mindestens 3 Messpunkte nötig. Danach beginnt die Früherkennung automatisch.</p>';return}
+ if(!arr.length){box.innerHTML='<p class="muted">Aktuell kein Coin mit ausreichend ungewöhnlicher Kurzfristbewegung. Das ist ausdrücklich auch ein gutes Radar-Ergebnis.</p>';return}
+ box.innerHTML=arr.map(x=>`<div class="card" style="box-shadow:none;margin:8px 0"><div class="coin"><div><b>${x.stage} · ${x.coin}</b><div class="muted">${x.reasons.map(esc).join(" · ")||"Kurzfristig auffällig"}</div></div><div class="metric">${x.score}/100</div></div><div style="margin-top:8px"><span class="tag">10 Min ${fmtPct(x.p)}</span> <span class="tag">Relativ ${x.rel==null?"—":fmtPct(x.rel)}</span></div><div class="muted" style="margin-top:7px">${x.score>=70?"Aktion: genauer untersuchen – noch kein Kauf.":x.score>=50?"Aktion: beobachten; Bestätigung abwarten.":"Aktion: nur vormerken."}</div></div>`).join("");
+}
+function drawLiveMonitorChart(){
+ const canvas=document.getElementById("liveMonitorChart"),hint=document.getElementById("lmChartHint");if(!canvas)return;
+ if(liveMonitorChartObj){liveMonitorChartObj.destroy();liveMonitorChartObj=null}
+ const cutoff=Date.now()-10*60*1000,snaps=db.liveMonitor.snapshots.filter(x=>x.t>=cutoff);
+ if(snaps.length<2){hint.textContent="Nach mindestens zwei Aktualisierungen entsteht hier der rollierende 10-Minuten-Vergleich. Mit „Jetzt aktualisieren“ kannst du den ersten Snapshot sofort speichern.";return}
+ if(typeof Chart==="undefined"){hint.textContent="Chart.js konnte nicht geladen werden.";return}
+ const now=Date.now();
+ const datasets=db.liveMonitor.coins.map(c=>{
+   const pts=snaps.filter(x=>x.v&&x.v[c]!=null).map(x=>({x:x.t,y:x.v[c]}));
+   const first=pts.length?pts[0].y:null;
+   return {label:c,data:pts.map(x=>({x:x.x,y:first?x.y/first*100:null})),spanGaps:true,borderWidth:2,pointRadius:1.5,tension:.15};
+ });
+ liveMonitorChartObj=new Chart(canvas,{type:"line",data:{datasets},options:{maintainAspectRatio:false,responsive:true,parsing:false,interaction:{mode:"nearest",intersect:false},plugins:{legend:{labels:{color:"#edf6fa"}}},scales:{x:{type:"linear",min:now-600000,max:now,ticks:{color:"#8ca3af",maxTicksLimit:11,callback:v=>new Date(v).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})},grid:{color:"#20384755"},title:{display:true,text:"immer: jetzt −10 Min → jetzt",color:"#8ca3af"}},y:{ticks:{color:"#8ca3af"},grid:{color:"#20384755"},title:{display:true,text:"Start des sichtbaren Fensters = 100",color:"#8ca3af"}}}}});
+ const oldest=snaps[0]?.t||now,newest=snaps.at(-1)?.t||now,gap=Math.max(0,Math.round((now-newest)/1000));
+ hint.textContent="ECHTES rollierendes Fenster: "+new Date(now-600000).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" bis "+new Date(now).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" · "+snaps.length+" Messpunkte · letzter Punkt vor "+gap+" s. Nach Unterbrechungen werden fehlende Intraday-Punkte soweit verfügbar nachgeladen.";
+}
+
+let timePatternChartObj=null,timePatternReq=0;
+function median(vals){
+ const a=vals.filter(Number.isFinite).sort((x,y)=>x-y),n=a.length;if(!n)return null;
+ return n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2;
+}
+async function refreshTimePattern(){
+ const coin=document.getElementById("detailCoin")?.value,mode=document.getElementById("patternMode")?.value||"14";
+ const hint=document.getElementById("timePatternHint"),stats=document.getElementById("patternStats"),canvas=document.getElementById("timePatternChart");
+ if(!coin||!hint||!canvas)return;
+ const req=++timePatternReq;stats.innerHTML="";
+ ensureForecastLab();ensureLiveMonitor();
+ db.hourlyArchive=db.hourlyArchive||{};
+
+ // Build local historical source. No extra CoinGecko historical request:
+ // 1) compact hourly archive accumulated from normal Live Monitor quotes,
+ // 2) existing frozen forecast measurements as historical backfill,
+ // 3) recent six-hour live snapshots.
+ const raw=[];
+ for(const x of (db.hourlyArchive[coin]||[]))if(Number.isFinite(x.p))raw.push({t:x.t,p:x.p,src:"Archiv"});
+ for(const f of db.forecastLab.items)if(f.coin===coin&&Number.isFinite(f.start))raw.push({t:f.t,p:f.start,src:"Forecast"});
+ for(const x of db.liveMonitor.snapshots)if(x.v&&Number.isFinite(x.v[coin]))raw.push({t:x.t,p:x.v[coin],src:"Live"});
+ raw.sort((a,b)=>a.t-b.t);
+ // Deduplicate into 30-minute buckets to keep pattern calculations lightweight.
+ const buckets=new Map();
+ for(const x of raw)buckets.set(Math.floor(x.t/1800000)*1800000,x);
+ const pts=[...buckets.values()].sort((a,b)=>a.t-b.t);
+ if(req!==timePatternReq)return;
+
+ const now=new Date(),nowMin=now.getHours()*60+now.getMinutes(),todayKey=now.toLocaleDateString("sv-SE");
+ const byDay={};
+ for(const x of pts){
+   const d=new Date(x.t),key=d.toLocaleDateString("sv-SE");
+   if(key===todayKey)continue;
+   (byDay[key]||(byDay[key]=[])).push(x);
+ }
+ let keys=Object.keys(byDay).sort().reverse();
+ if(mode==="weekday")keys=keys.filter(k=>new Date(k+"T12:00:00").getDay()===now.getDay()).slice(0,8);
+ else keys=keys.slice(0,+mode);
+ const offsets=[];for(let m=-180;m<=120;m+=30)offsets.push(m);
+ const days=[];
+ for(const key of keys){
+   const arr=byDay[key],baseTarget=new Date(key+"T00:00:00").getTime()+nowMin*60000;
+   const nearest=(target)=>{
+     let best=null,dist=Infinity;
+     for(const q of arr){const z=Math.abs(q.t-target);if(z<dist){dist=z;best=q}}
+     return dist<=55*60000?best:null;
+   };
+   const base=nearest(baseTarget);if(!base)continue;
+   const values=offsets.map(o=>{const q=nearest(baseTarget+o*60000);return q?100*q.p/base.p:null});
+   if(values.filter(Number.isFinite).length>=6)days.push({key,values});
+ }
+ if(days.length<2){
+   if(timePatternChartObj){timePatternChartObj.destroy();timePatternChartObj=null}
+   const archived=(db.hourlyArchive[coin]||[]).length,fc=db.forecastLab.items.filter(x=>x.coin===coin).length;
+   hint.innerHTML=`Noch nicht genügend lokale Historie für ${esc(coin)}. Vorhanden: <b>${archived}</b> Stunden-Archivpunkte und <b>${fc}</b> Forecast-Messpunkte. Die App sammelt ab V1.15 automatisch je beobachtetem Coin einen Wert pro Stunde – ohne zusätzlichen API-Abruf.`;
+   stats.innerHTML=`<div class="card" style="box-shadow:none"><div class="muted">Lokaler Aufbau</div><div class="metric">${archived}</div><div class="muted">Stundenpunkte</div></div><div class="card" style="box-shadow:none"><div class="muted">Forecast-Backfill</div><div class="metric">${fc}</div><div class="muted">vorhandene Messpunkte</div></div>`;
+   return;
+ }
+ const med=offsets.map((_,i)=>median(days.map(d=>d.values[i])));
+ const futureIdx=offsets.indexOf(120),future=days.map(d=>d.values[futureIdx]).filter(Number.isFinite).map(v=>v-100);
+ const up=future.filter(v=>v>0).length,med2=median(future),abs=median(future.map(Math.abs));
+ const box=(t,v,sub)=>`<div class="card" style="box-shadow:none"><div class="muted">${t}</div><div class="metric">${v}</div><div class="muted">${sub}</div></div>`;
+ stats.innerHTML=box("Vergleichstage",days.length,mode==="weekday"?"gleicher Wochentag":"lokale historische Tage")+
+   box("Nach +2h gestiegen",future.length?up+" / "+future.length:"—",future.length?Math.round(up/future.length*100)+" %":"")+
+   box("Median nach +2h",med2==null?"—":fmtPct(med2),"historischer Median")+
+   box("Typische Bewegung",abs==null?"—":"±"+Math.abs(abs).toFixed(2)+" %","Median |Bewegung| nach 2h");
+ if(timePatternChartObj){timePatternChartObj.destroy();timePatternChartObj=null}
+ const datasets=days.slice().reverse().map(d=>({label:d.key,data:offsets.map((o,i)=>({x:o,y:d.values[i]})),borderWidth:1,pointRadius:0,tension:.18,spanGaps:true}));
+ datasets.push({label:"Median",data:offsets.map((o,i)=>({x:o,y:med[i]})),borderWidth:3,pointRadius:0,tension:.18,spanGaps:true});
+ const finiteMed=med.filter(Number.isFinite);
+ if(finiteMed.length)datasets.push({label:"JETZT",data:[{x:0,y:Math.min(...finiteMed)},{x:0,y:Math.max(...finiteMed)}],borderWidth:2,pointRadius:0});
+ timePatternChartObj=new Chart(canvas,{type:"line",data:{datasets},options:{maintainAspectRatio:false,responsive:true,animation:false,parsing:false,interaction:{mode:"nearest",intersect:false},
+   plugins:{legend:{labels:{color:"#edf6fa",boxWidth:11,font:{size:9}}},tooltip:{callbacks:{title:it=>{const m=it[0].parsed.x;return m===0?"JETZT":(m<0?Math.abs(m)+" Min vorher":"+"+m+" Min danach")},label:it=>it.dataset.label+": "+Number(it.parsed.y).toFixed(2)}}},
+   scales:{x:{type:"linear",min:-180,max:120,ticks:{color:"#8ca3af",stepSize:60,callback:v=>v===0?"JETZT":v<0?(v/60)+"h":("+"+(v/60)+"h")},grid:{color:"#20384755"}},
+     y:{ticks:{color:"#8ca3af",callback:v=>Number(v).toFixed(1)},grid:{color:"#20384755"},title:{display:true,text:"Kurs relativ zu JETZT = 100",color:"#8ca3af"}}}}});
+ hint.textContent="Lokale Datenbasis: Stunden-Archiv + vorhandene Forecast-Messpunkte. Keine zusätzliche Historien-Abfrage. Dünne Linien = Einzeltage · Median = typische Mitte · rechts von JETZT = historische Folgeverläufe.";
+}
+let detailChartObj=null;
+function detailUniverse(){
+ return [...new Set([...(db.positions||[]).map(x=>x.coin),...(db.watch||[]).map(x=>x.coin),...(db.radar||[]).map(x=>x.coin),"BTC","ETH","LINK","XLM","CRV"])].filter(Boolean).sort();
+}
+function fillDetailCoins(selected){
+ const e=document.getElementById("detailCoin");if(!e)return;
+ const old=selected||e.value;e.innerHTML=detailUniverse().map(c=>`<option ${c===old?"selected":""}>${c}</option>`).join("");
+ if(!e.value&&e.options.length)e.selectedIndex=0;
+}
+function openCoinDetail(coin){
+ document.querySelectorAll("main").forEach(x=>x.classList.add("hidden"));
+ document.getElementById("detail").classList.remove("hidden");
+ document.querySelectorAll("#nav button,#mobileNav button").forEach(x=>x.classList.toggle("active",x.dataset.page==="detail"));
+ fillDetailCoins(coin);renderCoinDetail();setTimeout(refreshTimePattern,0);
+}
+async function refreshDetailData(){
+ const coin=document.getElementById("detailCoin").value,days=+document.getElementById("detailDays").value||90,st=document.getElementById("detailChartHint");
+ if(!coin||!CG_IDS[coin]){st.textContent="Für "+coin+" ist noch keine Marktdaten-Zuordnung hinterlegt.";return}
+ st.textContent="Lade historische EUR-Kurse …";
+ try{
+  const [p,h]=await Promise.all([
+   cgFetch("/simple/price?ids="+CG_IDS[coin]+"&vs_currencies=eur&include_24hr_change=true&include_24hr_vol=true&include_last_updated_at=true"),
+   cgFetch("/coins/"+CG_IDS[coin]+"/market_chart?vs_currency=eur&days="+days+"&interval=daily")
+  ]);
+  const x=p[CG_IDS[coin]];db.live=db.live||{};db.prices=db.prices||{};
+  if(x)db.live[coin]={price:x.eur,change24:x.eur_24h_change,volume24:x.eur_24h_vol,updated:x.last_updated_at};
+  if(h.prices)db.prices[coin]=h.prices.map(v=>({date:new Date(v[0]).toISOString().slice(0,10),price:v[1]}));
+  localStorage.setItem(KEY,JSON.stringify(db));render();fillDetailCoins(coin);renderCoinDetail();
+  st.textContent="Historie aktualisiert: "+new Date().toLocaleString("de-DE");
+  refreshTimePattern();
+ }catch(e){st.textContent="Abruf nicht möglich ("+e.message+"). Vorhandene gespeicherte Kursdaten werden weiter angezeigt."}
+}
+function eventDate(x){
+ const d=(x.date||x.datetime||x.time||"").toString();return d.slice(0,10);
+}
+function nearestPrice(series,date){
+ if(!series||!series.length||!date)return null;
+ let best=series[0],dist=Infinity,t=new Date(date+"T12:00:00").getTime();
+ for(const x of series){const z=Math.abs(new Date(x.date+"T12:00:00").getTime()-t);if(z<dist){dist=z;best=x}}
+ return best&&best.price;
+}
+function renderCoinDetail(){
+ const sel=document.getElementById("detailCoin");if(!sel)return;fillDetailCoins(sel.value);
+ const coin=sel.value;if(!coin)return;
+ const live=db.live&&db.live[coin],pos=(db.positions||[]).find(x=>x.coin===coin);
+ const radar=(db.radar||[]).filter(x=>x.coin===coin).slice().sort((a,b)=>eventDate(a).localeCompare(eventDate(b)));
+ const trades=(db.trades||[]).filter(x=>x.coin===coin).slice().sort((a,b)=>eventDate(a).localeCompare(eventDate(b)));
+ const latest=radar[radar.length-1],cur=live&&live.price,val=pos&&cur!=null?pos.qty*cur:null,pl=pos&&val!=null?val-pos.invest:null,pct=pl!=null&&pos.invest?pl/pos.invest*100:null;
+ document.getElementById("detailChartTitle").textContent=coin+" · historischer EUR-Kurs";
+ const box=(t,v,sub,cls="")=>`<div class="card"><div class="muted">${t}</div><div class="metric ${cls}">${v}</div><div class="muted">${sub}</div></div>`;
+ document.getElementById("detailMetrics").innerHTML=
+  box("Aktueller Kurs",cur!=null?fmtEur(cur):"—",live?fmtPct(live.change24)+" · 24h":"Kursdaten laden",live&&live.change24>=0?"green":live?"red":"")+
+  box("Radar",latest?esc(latest.stage):"—",latest?"Score "+latest.score+"/100":"kein Radar-Eintrag")+
+  box("Position",pos?fmtEur(pos.invest):"—",pos?esc(pos.type)+" · Ø "+fmtEur(pos.avg):"nicht im Portfolio")+
+  box("G/V",pl==null?"—":(pl>=0?"+":"")+fmtEur(pl),pct==null?"—":fmtPct(pct),pl==null?"":pl>=0?"green":"red");
+ document.getElementById("detailRadar").innerHTML=latest?`<div class="metric">${esc(latest.stage)}</div><p>${esc(latest.note||latest.reason||"")}</p><div class="muted">Score ${latest.score}/100 · ${eventDate(latest)||"ohne Datum"}</div>`:`<p class="muted">Noch kein Radar-Eintrag für ${coin}.</p>`;
+ document.getElementById("detailPosition").innerHTML=pos?`<div><b>${Number(pos.qty).toLocaleString("de-DE",{maximumFractionDigits:8})} ${coin}</b></div><div>Ø Einstieg ${fmtEur(pos.avg)}</div><div>Investiert ${fmtEur(pos.invest)}</div><div>Aktueller Wert ${val==null?"—":fmtEur(val)}</div><div class="${pl==null?"":pl>=0?"green":"red"}"><b>${pl==null?"Kurs laden":(pl>=0?"+":"")+fmtEur(pl)+" · "+fmtPct(pct)}</b></div>`:`<p class="muted">Keine aktuelle Position.</p>`;
+ const events=[
+  ...radar.map(x=>({date:eventDate(x),kind:"RADAR",label:x.stage,txt:x.note||x.reason||"",score:x.score})),
+  ...trades.map(x=>({date:eventDate(x),kind:(x.side||x.type||"").toString().toUpperCase().includes("VER")?"VERKAUF":"KAUF",label:x.side||x.type||"Trade",txt:x.reason||x.note||"",price:x.price}))
+ ].filter(x=>x.date).sort((a,b)=>b.date.localeCompare(a.date));
+ document.getElementById("detailTimeline").innerHTML=events.length?events.map(e=>`<div style="border-left:3px solid #38576a;padding:7px 12px;margin:7px 0"><b>${e.date} · ${esc(e.kind)}</b> — ${esc(e.label||"")} ${e.score!=null?`· Score ${e.score}/100`:""}<div class="muted">${esc(e.txt||"")}</div></div>`).join(""):`<p class="muted">Noch keine Radar- oder Transaktionshistorie.</p>`;
+ drawDetailChart(coin,radar,trades);
+}
+function drawDetailChart(coin,radar,trades){
+ const series=(db.prices&&db.prices[coin])||[],hint=document.getElementById("detailChartHint"),canvas=document.getElementById("detailChart");
+ if(detailChartObj){detailChartObj.destroy();detailChartObj=null}
+ if(series.length<2){hint.textContent="Noch keine historischen Kursdaten für "+coin+". Oben „Kursdaten laden“ drücken.";return}
+ if(typeof Chart==="undefined"){hint.textContent="Chart.js konnte nicht geladen werden.";return}
+ const labels=series.map(x=>x.date),prices=series.map(x=>x.price);
+ const eventSet=(arr,label,pointStyle)=>({label,data:labels.map(d=>{const ev=arr.find(x=>eventDate(x)===d);return ev?nearestPrice(series,d):null}),showLine:false,pointRadius:6,pointHoverRadius:9,pointStyle});
+ const buys=trades.filter(x=>!(x.side||x.type||"").toString().toUpperCase().includes("VER")),sells=trades.filter(x=>(x.side||x.type||"").toString().toUpperCase().includes("VER"));
+ detailChartObj=new Chart(canvas,{type:"line",data:{labels,datasets:[
+  {label:coin+" EUR",data:prices,borderWidth:2,pointRadius:0,tension:.18},
+  eventSet(radar,"Radar-Signal","circle"),eventSet(buys,"Kauf","triangle"),eventSet(sells,"Verkauf","rectRot")
+ ]},options:{maintainAspectRatio:false,responsive:true,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#edf6fa"}}},scales:{x:{ticks:{color:"#8ca3af",maxTicksLimit:10},grid:{color:"#20384755"}},y:{ticks:{color:"#8ca3af",callback:v=>Number(v).toLocaleString("de-DE")+" €"},grid:{color:"#20384755"}}}}});
+ hint.textContent="● Radar · ▲ Kauf · ◆ Verkauf. Punkte erscheinen, wenn das Ereignisdatum im geladenen Kurszeitraum liegt.";
+}
+function simFillCoins(){
+ const e=document.getElementById("simCoin");if(!e)return;
+ const prev=e.value;e.innerHTML=[...new Set([...BISON_LIST,...(db.positions||[]).map(x=>x.coin)])].sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+ e.value=prev||"HBAR";if(!e.value)e.selectedIndex=0;
+}
+function simDefaultSpread(c){return c==="BTC"||c==="ETH"?1.25:1.75}
+function simCoinChanged(){
+ const c=simCoin.value,spread=simDefaultSpread(c);
+ simBuy.value=spread;simSell.value=spread;
+ if(db.live&&db.live[c]&&db.live[c].price>0){simPrice.value=db.live[c].price;simExit.value=db.live[c].price}
+ else {simPrice.value="";simExit.value=""}
+ simCalc();
+ refreshSimDayChart();
+}
+let simDayChartObj=null,simDayRequest=0;
+async function refreshSimDayChart(){
+ const canvas=document.getElementById("simDayChart"),hint=document.getElementById("simDayHint"),badge=document.getElementById("simDayBadge");
+ if(!canvas||!document.getElementById("simCoin")||!simCoin.value)return;
+ const coin=simCoin.value,req=++simDayRequest;
+ if(typeof Chart==="undefined"){hint.textContent="Chart-Bibliothek konnte nicht geladen werden.";return}
+ if(!CG_IDS.BTC||!CG_IDS[coin]){hint.textContent="Für "+coin+" fehlt derzeit die Kursdaten-Zuordnung.";return}
+ hint.textContent="Lade heutigen Verlauf für BTC und "+coin+" …";
+ try{
+  const ids=coin==="BTC"?["BTC"]:["BTC",coin];
+  const rows=await Promise.all(ids.map(async c=>{
+   const h=await cgFetch("/coins/"+CG_IDS[c]+"/market_chart?vs_currency=eur&days=1");
+   return {coin:c,prices:(h.prices||[]).filter(x=>Array.isArray(x)&&x.length>=2)};
+  }));
+  if(req!==simDayRequest)return;
+  const now=new Date(),dayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  const prepared=rows.map(r=>{
+    let a=r.prices.filter(x=>x[0]>=dayStart);
+    if(a.length<2)a=r.prices;
+    const base=a[0]?.[1];
+    return {coin:r.coin,data:a.map(x=>({x:x[0],y:base?x[1]/base*100:null,eur:x[1]})).filter(x=>x.y!=null)};
+  }).filter(r=>r.data.length>1);
+  if(!prepared.length)throw new Error("keine Tagesdaten");
+  const labels=[...new Set(prepared.flatMap(r=>r.data.map(x=>x.x)))].sort((a,b)=>a-b);
+  const datasets=prepared.map(r=>{
+    const pts=r.data;
+    return {label:r.coin,data:labels.map(t=>{
+      let best=pts.reduce((a,x)=>Math.abs(x.x-t)<Math.abs(a.x-t)?x:a,pts[0]);
+      return Math.abs(best.x-t)<20*60*1000?best.y:null;
+    }),spanGaps:true,borderWidth:r.coin==="BTC"?2:3,pointRadius:0,tension:.18};
+  });
+  if(simDayChartObj)simDayChartObj.destroy();
+  simDayChartObj=new Chart(canvas,{type:"line",data:{labels:labels.map(t=>new Date(t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})),datasets},options:{maintainAspectRatio:false,responsive:true,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#edf6fa"}}},scales:{x:{ticks:{color:"#8ca3af",maxTicksLimit:9},grid:{color:"#20384755"}},y:{ticks:{color:"#8ca3af",callback:v=>Number(v).toFixed(1)},grid:{color:"#20384755"},title:{display:true,text:"Tagesperformance · Start = 100",color:"#8ca3af"}}}}});
+  const last=prepared.map(r=>({coin:r.coin,p:r.data.at(-1).y-100}));
+  badge.textContent=last.map(x=>x.coin+" "+(x.p>=0?"+":"")+x.p.toFixed(2)+" %").join(" · ");
+  hint.textContent="BTC ist die feste Referenz. "+coin+" wird automatisch mitgeführt. Dadurch siehst du sofort die relative Tagesstärke, ohne zwischen Seiten umzuschalten.";
+ }catch(e){
+  hint.textContent="Tageschart konnte gerade nicht geladen werden ("+e.message+"). Die Simulation funktioniert unabhängig davon weiter.";
+ }
+}
+function simModeChanged(){
+ const c=simCoin.value,p=(db.positions||[]).find(x=>x.coin===c);
+ if(simMode.value==="existing"&&p){simAmount.value=p.invest.toFixed(2);simInfo.textContent="Bestehende Position: "+p.qty.toLocaleString("de-DE",{maximumFractionDigits:10})+" "+c+". Der tatsächliche Einstieg enthält bereits den damaligen BISON-Spread. Kaufaufschlag wird NICHT erneut berechnet."}
+ else if(simMode.value==="existing"){simInfo.textContent="Für diesen Coin ist keine Portfolio-Position erfasst. Bitte einen Coin aus dem Portfolio wählen."}
+ else simInfo.textContent="Neukauf-Simulation: Referenzkurs (z. B. CoinGecko) plus geschätzter BISON-Kaufaufschlag.";
+ simCalc();
+}
+function simUseLive(){const c=simCoin.value,l=db.live&&db.live[c];if(!l||!(l.price>0)){alert("Kein gespeicherter Live-Referenzkurs vorhanden. Bitte zuerst Marktdaten laden oder Kurs manuell eingeben.");return}simPrice.value=l.price;simExit.value=l.price;simCalc()}
+function simCalc(){
+ const c=simCoin.value,p=(db.positions||[]).find(x=>x.coin===c),existing=simMode.value==="existing";
+ const ref=+simPrice.value,investment=existing&&p?+p.invest:+simAmount.value;
+ const buy=+simBuy.value/100,sell=+simSell.value/100,target=+simTarget.value,exit=+simExit.value;
+ const box=document.getElementById("simResults"),sc=document.getElementById("simScenarios");
+ if(!(investment>0)||!(sell>=0&&sell<1)||!(buy>=0)||!(ref>0)||existing&&!p){box.innerHTML='<div class="card">Bitte gültigen Referenzkurs und Betrag sowie gegebenenfalls eine vorhandene Position auswählen.</div>';sc.innerHTML="";return}
+ const ask=ref*(1+buy),qty=existing?p.qty:investment/ask,actualBuy=existing?p.avg:ask;
+ const cost=investment,netSell=exit>0?exit*(1-sell):null,proceeds=netSell!=null?qty*netSell:null,profit=proceeds!=null?proceeds-cost:null;
+ const breakEvenSell=cost/qty,breakEvenRef=breakEvenSell/(1-sell),targetRef=(cost+Math.max(0,target))/qty/(1-sell);
+ const card=(title,value,sub,cls="")=>`<div class="card"><div class="muted">${title}</div><div class="metric ${cls}">${value}</div><div class="muted">${sub}</div></div>`;
+ box.innerHTML=card(existing?"Tatsächlicher Ø-Einstieg":"Geschätzter Kaufkurs",fmtEur(actualBuy),"je Coin")+
+ card("Geschätzter Verkaufskurs",netSell!=null?fmtEur(netSell):"—","Referenz minus Verkaufsabschlag")+
+ card("Break-even Referenzkurs",fmtEur(breakEvenRef),"notwendiger Verkaufskurs bei BISON: "+fmtEur(breakEvenSell))+
+ card("Ergebnis beim Verkauf",profit==null?"—":(profit>=0?"+":"")+fmtEur(profit),profit==null?"Verkaufskurs eingeben":fmtPct(profit/cost*100),profit==null?"":profit>=0?"green":"red");
+ const moves=[-20,-10,-5,0,3,5,10,15,20,30,50];
+ const liveNow=db.live&&db.live[c]&&db.live[c].price>0?db.live[c].price:ref;
+ const currentMove=(liveNow/ref-1)*100,currentBid=liveNow*(1-sell),currentValue=qty*currentBid,currentGain=currentValue-cost,currentGainPct=currentGain/cost*100;
+ const currentRow=`<tr style="outline:2px solid #42d6b4;outline-offset:-2px;background:rgba(66,214,180,.10);font-weight:700"><td>📍 JETZT<br><span class="muted">${currentMove>=0?"+":""}${currentMove.toFixed(2)} % vs. Simulationsbasis</span></td><td>${fmtEur(liveNow)}</td><td>${fmtEur(currentBid)}</td><td>${fmtEur(currentValue)}</td><td class="${currentGain>=0?"green":"red"}">${currentGain>=0?"+":""}${fmtEur(currentGain)}</td><td class="${currentGain>=0?"green":"red"}">${fmtPct(currentGainPct)}</td></tr>`;
+ const scenarioRows=moves.map(m=>{const r=ref*(1+m/100),bid=r*(1-sell),v=qty*bid,g=v-cost;return `<tr><td>${m>0?"+":""}${m}%</td><td>${fmtEur(r)}</td><td>${fmtEur(bid)}</td><td>${fmtEur(v)}</td><td class="${g>=0?"green":"red"}">${g>=0?"+":""}${fmtEur(g)}</td><td class="${g>=0?"green":"red"}">${fmtPct(g/cost*100)}</td></tr>`}).join("");
+ const nowMeaning=currentGain>=0?`Beim geschätzten Verkauf jetzt lägen wir nach dem angenommenen BISON-Verkaufsabschlag bei <b class="green">+${fmtEur(currentGain)} (${fmtPct(currentGainPct)})</b>.`:`Beim geschätzten Verkauf jetzt lägen wir nach dem angenommenen BISON-Verkaufsabschlag bei <b class="red">${fmtEur(currentGain)} (${fmtPct(currentGainPct)})</b>.`;
+ sc.innerHTML=`<p class="muted">Bestand: <b>${qty.toLocaleString("de-DE",{maximumFractionDigits:10})} ${esc(c)}</b> · Kapitaleinsatz: <b>${fmtEur(cost)}</b> · Ziel: <b>+${fmtEur(Math.max(0,target))}</b> bei Referenzkurs <b>${fmtEur(targetRef)}</b></p><div class="card" style="box-shadow:none;margin:10px 0 14px;border:1px solid rgba(66,214,180,.45)"><b>📍 Aktuelle Situation</b><div style="margin-top:5px">${nowMeaning}</div><div class="muted" style="margin-top:4px">Aktueller Referenzkurs ${fmtEur(liveNow)} · geschätzter BISON-Verkaufskurs ${fmtEur(currentBid)} · geschätzte Auszahlung ${fmtEur(currentValue)}</div></div><table><thead><tr><th>Referenzkurs vs. heute</th><th>Referenz €</th><th>BISON-Verkauf ca. €</th><th>Auszahlung €</th><th>Netto G/V €</th><th>Netto G/V %</th></tr></thead><tbody>${currentRow}${scenarioRows}</tbody></table>`;
+ if(existing&&p)simInfo.textContent="Bestehende Position: tatsächlicher BISON-Einstieg wird nicht erneut mit Kaufaufschlag belastet. Für den Ausstieg wird der einstellbare Verkaufsabschlag angenommen.";
+ else simInfo.textContent="Modellannahme für Neukauf: Referenzkurs + "+simBuy.value+" % Kaufaufschlag; beim Verkauf Referenzkurs − "+simSell.value+" % Verkaufsabschlag. BISON zeigt tatsächlich verbindliche Kauf-/Verkaufspreise an.";
+}
+const BISON_LIST=["1INCH","AAVE","ADA","ALGO","APE","APT","ARB","ATOM","AVAX","AXS","BAT","BCH","BNB","BTC","CHZ","COMP","CRO","CRV","DOGE","DOT","EGLD","ENA","ENJ","EOS","ETC","ETH","FET","FIL","FLOW","GALA","GRT","HBAR","ICP","IMX","INJ","KSM","LDO","LINK","LRC","LTC","MANA","MKR","NEAR","NEO","ONDO","OP","PEPE","POL","QNT","RENDER","SAND","SHIB","SKY","SNX","SOL","SUI","SUSHI","THETA","TRX","UNI","VET","WIF","XLM","XRP","XTZ","ZEC"];
+function fillWatchCoins(){const e=document.getElementById("wCoin");if(e)e.innerHTML=BISON_LIST.map(c=>`<option>${c}</option>`).join("")}
+function showWatchForm(){watchForm.classList.remove("hidden");fillWatchCoins()}
+function hideWatchForm(){watchForm.classList.add("hidden")}
+function addWatch(){
+ const coin=wCoin.value;if(!coin)return;
+ if(!db.watch)db.watch=[];
+ if(db.watch.some(x=>x.coin===coin))return alert(coin+" ist bereits auf Personal Watch.");
+ db.watch.push({coin,priority:wPriority.value,date:wDate.value||new Date().toISOString().slice(0,10),ref:+wRef.value||0,note:wNote.value.trim()});
+ save();hideWatchForm();wRef.value="";wNote.value="";
+}
+function delWatch(i){if(confirm("Coin von Personal Watch entfernen? Historische Radar-/Trade-Daten bleiben erhalten.")){db.watch.splice(i,1);save()}}
+let compareChartObj=null;
+function renderCompare(){
+ const ids=[...document.querySelectorAll(".cmp:checked")].map(x=>+x.value).slice(0,4);
+ if(!ids.length)return alert("Bitte mindestens einen Coin auswählen.");
+ const items=ids.map(i=>db.watch[i]).filter(Boolean);
+ compareArea.innerHTML=`<div class="scroll"><table><thead><tr><th>Coin</th><th>Priorität</th><th>Watch seit</th><th>Referenz</th><th>Radar</th><th>Portfolio</th></tr></thead><tbody>${items.map(w=>{
+  const r=db.radar.slice().reverse().find(x=>x.coin===w.coin),p=db.positions.find(x=>x.coin===w.coin);
+  return `<tr><td><b>${esc(w.coin)}</b></td><td>${esc(w.priority)}</td><td>${new Date(w.date+"T12:00:00").toLocaleDateString("de-DE")}</td><td>${w.ref?Number(w.ref).toLocaleString("de-DE",{maximumFractionDigits:10})+" €":"—"}</td><td>${r?esc(r.stage)+" · "+r.score+"/100":"—"}</td><td>${p?esc(p.type)+" · Ø "+Number(p.avg).toLocaleString("de-DE",{maximumFractionDigits:10})+" €":"—"}</td></tr>`}).join("")}</tbody></table></div>`;
+ drawComparison(items);
+}
+function drawComparison(items){
+ const hint=document.getElementById("chartHint"),canvas=document.getElementById("compareChart");
+ const available=items.filter(w=>db.prices[w.coin]&&db.prices[w.coin].length>1);
+ if(!available.length){if(compareChartObj){compareChartObj.destroy();compareChartObj=null}hint.textContent="Für diese Auswahl fehlen noch Kursdaten. Unten kannst du eine CSV importieren.";return}
+ const allDates=[...new Set(available.flatMap(w=>db.prices[w.coin].map(x=>x.date)))].sort();
+ const datasets=available.map(w=>{
+   const map=Object.fromEntries(db.prices[w.coin].map(x=>[x.date,x.price]));
+   const vals=allDates.map(d=>map[d]??null);const first=vals.find(v=>v!=null);
+   return {label:w.coin,data:vals.map(v=>v==null?null:(v/first)*100),spanGaps:true,borderWidth:2,pointRadius:0,tension:.18};
+ });
+ if(typeof Chart==="undefined"){hint.textContent="Chart-Bibliothek konnte offline nicht geladen werden. Die importierten Kursdaten bleiben gespeichert.";return}
+ if(compareChartObj)compareChartObj.destroy();
+ compareChartObj=new Chart(canvas,{type:"line",data:{labels:allDates,datasets},options:{responsive:true,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#edf6fa"}}},scales:{x:{ticks:{color:"#8ca3af",maxTicksLimit:8},grid:{color:"#20384755"}},y:{ticks:{color:"#8ca3af",callback:v=>v},grid:{color:"#20384755"},title:{display:true,text:"Performance (Start = 100)",color:"#8ca3af"}}}}});
+ hint.textContent="Normalisiert: erster vorhandener Kurs jedes ausgewählten Coins = 100.";
+}
+function importPrices(el){
+ const f=el.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{try{
+   const lines=r.result.trim().split(/\r?\n/);if(lines.length<2)throw 0;
+   const sep=lines[0].includes(";")?";":",",heads=lines[0].split(sep).map(x=>x.trim().toLowerCase());
+   const di=heads.indexOf("date"),ci=heads.indexOf("coin"),pi=heads.indexOf("price_eur");
+   if(di<0||ci<0||pi<0)throw 0;
+   let n=0;if(!db.prices)db.prices={};
+   for(const line of lines.slice(1)){const a=line.split(sep),coin=(a[ci]||"").trim().toUpperCase(),date=(a[di]||"").trim(),price=parseFloat((a[pi]||"").trim().replace(",","."));
+    if(!coin||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!isFinite(price))continue;
+    if(!db.prices[coin])db.prices[coin]=[];const ex=db.prices[coin].find(x=>x.date===date);if(ex)ex.price=price;else db.prices[coin].push({date,price});n++;
+   }
+   Object.values(db.prices).forEach(a=>a.sort((x,y)=>x.date.localeCompare(y.date)));save();alert(n+" Kurswerte importiert.");el.value="";
+ }catch(e){alert("CSV erwartet: date;coin;price_eur (z. B. 2026-10-01;BTC;85000)")}};r.readAsText(f);
+}
+function downloadPriceTemplate(){
+ const txt="date;coin;price_eur\n2026-10-01;BTC;85000\n2026-10-01;ETH;2300\n2026-10-02;BTC;85500\n2026-10-02;ETH;2350\n";
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv"}));a.download="bison-radar-kursvorlage.csv";a.click();URL.revokeObjectURL(a.href);
+}
+
+function exportData(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.download="bison-radar-backup.json";a.click();URL.revokeObjectURL(a.href)}
+function importData(el){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();alert("Import erfolgreich.")}catch(e){alert("Ungültige JSON-Datei.")}};r.readAsText(f)}
+function resetData(){if(confirm("Auf Startdaten zurücksetzen?")){db=structuredClone(defaults);save()}}
+render();
+renderLiveCards();fillWatchCoins();fillDetailCoins();simFillCoins();simCoinChanged();ensureLiveMonitor();fillLiveCoinSelect();setupLiveMonitorTimer();renderLiveMonitor();setTimeout(()=>{if(db.liveMonitor.auto)liveMonitorHeartbeat()},700);const wd=document.getElementById("wDate");if(wd)wd.value=new Date().toISOString().slice(0,10);const td=document.getElementById("tDate");if(td){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());td.value=d.toISOString().slice(0,16)}
+</script>
+
+<script>
+if ("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")) {
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body></html>

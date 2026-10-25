@@ -1,0 +1,11 @@
+{
+  "name": "BISON Radar",
+  "short_name": "BISON Radar",
+  "description": "Mobiles und Desktop-Cockpit für das persönliche BISON Radar.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071018",
+  "theme_color": "#071018",
+  "orientation": "any"
+}
